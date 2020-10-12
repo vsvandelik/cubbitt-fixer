@@ -3,8 +3,8 @@ import re
 import digits_translation as dt
 import units
 
-pattern = re.compile(rf"(\d+\s?(?:{units.unitsString})\b)")
-
+number_patter = re.compile(rf"(\d+\s?(?:{units.unitsString})\b)")
+name_pattern = re.compile(r"^.+([A-Z][a-z]+\b)")
 
 def generate_translated_variants(number: int, rest: str) -> list:
     """
@@ -47,7 +47,7 @@ def numbers_filter(left: str, right: str) -> list:
     :param right: translation
     :return: list with problematic parts (not correctly translated)
     """
-    parts = re.findall(pattern, left)
+    parts = re.findall(number_patter, left)
     if len(parts) == 0:  # any number-digit part in left text
         return []
 
@@ -63,6 +63,32 @@ def numbers_filter(left: str, right: str) -> list:
 
         variants = generate_translated_variants(number, rest)
         found = re.search("|".join(variants), right)
+        if not found:
+            problems.append(part)
+
+    return problems
+
+
+def names_filter(left: str, right: str) -> list:
+    """
+    Experiment to filter translation problems with proper names. It searches for non-leading word with
+    first capital letter and tries to find same word in translation. It it fails, the word is reported.
+
+    It should not be used because the filter is not smart enough to search for real problems and it
+    reports every translation of name.
+
+    :param left: text in original language
+    :param right: translation
+    :return: list with problematic parts (not correctly translated)
+    """
+    parts = re.findall(name_pattern, left)
+    if len(parts) == 0:  # any proper name in original text
+        return []
+
+    problems = []
+
+    for part in parts:
+        found = re.search(part, right)
         if not found:
             problems.append(part)
 
@@ -104,6 +130,7 @@ def filter_sentences(file: str, offset=0, limit=10000, ignore_limit=False) -> No
 
             problems = []
             problems += numbers_filter(left, right)
+            # problems += names_filter(left, right)
 
             if len(problems):  # reporting errors
                 print(problems, left, right, sep='\n')

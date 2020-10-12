@@ -4,4 +4,5 @@
 # except
 !*.py
 !*.sh
+!*.md
 !.gitignore
