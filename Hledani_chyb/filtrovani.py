@@ -4,9 +4,10 @@ import argparse
 import digits_translation as dt
 import units
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument("file", help="Name of file to be checked")
+parser.add_argument("source_lang", help="Label of source language of file (sentences on left)")
+parser.add_argument("dest_lang", help="Label of translated language of file (sentences on right)")
 
 parser.add_argument("--numbers", action="store_true", default=False, help="Filter numbers problems")
 parser.add_argument("--interpunction", action="store_true", default=False, help="Filter interpunction problems")
@@ -16,7 +17,7 @@ parser.add_argument("--limit", default=100000, type=int, help="Count of sentence
 parser.add_argument("--offset", default=0, help="Offset of sentences to be checked")
 
 
-def generate_translated_variants(number: int, rest: str) -> list:
+def generate_translated_variants(number: int, rest: str, left_lang: str) -> list:
     """
     Generates all possible variants (cartesian product) of number with unit.
 
@@ -27,13 +28,16 @@ def generate_translated_variants(number: int, rest: str) -> list:
 
     :param number: numeric value
     :param rest: units of numeric value
+    :param left_lang: language of left sentence
     :return: list with all possible variants
     """
     patterns = ["{}{}", "{} {}", "{}-{}"]
 
     numbers = [number, '{:,}'.format(number)]
-    if number in dt.en.keys():  # rewrite digit as a string
+    if left_lang == 'cs' and number in dt.en.keys():  # rewrite digit as a string
         numbers.append(dt.en[number])
+    elif left_lang == 'en' and number in dt.cs.keys():
+        numbers.append(dt.cs[number])
 
     rests = [rest] + units.units[rest]
 
@@ -50,7 +54,7 @@ def generate_translated_variants(number: int, rest: str) -> list:
 number_patter = re.compile(rf"(\d+\s?(?:{units.unitsString})\b)")
 
 
-def numbers_filter(left: str, right: str) -> list:
+def numbers_filter(left: str, right: str, left_lang: str, right_lang: str) -> list:
     """
     Find non-valid translation of numbers with units. It searches in left given substring for some possible problematic
     substrings then it prepares all valid translations and finally it searches for that translations in right substring.
@@ -58,6 +62,8 @@ def numbers_filter(left: str, right: str) -> list:
 
     :param left: text in original language
     :param right: translation
+    :param left_lang: original language
+    :param right_lang: translation language
     :return: list with problematic parts (not correctly translated)
     """
     parts = re.findall(number_patter, left)
@@ -74,7 +80,7 @@ def numbers_filter(left: str, right: str) -> list:
                 rest = part[idx:].strip()
                 break
 
-        variants = generate_translated_variants(number, rest)
+        variants = generate_translated_variants(number, rest, left_lang)
         found = re.search("|".join(variants), right)
         if not found:
             problems.append(part)
@@ -85,7 +91,7 @@ def numbers_filter(left: str, right: str) -> list:
 name_pattern = re.compile(r"^.+([A-Z][a-z]+\b)")
 
 
-def names_filter(left: str, right: str) -> list:
+def names_filter(left: str, right: str, left_lang: str, right_lang: str) -> list:
     """
     Experiment to filter translation problems with proper names. It searches for non-leading word with
     first capital letter and tries to find same word in translation. It it fails, the word is reported.
@@ -95,6 +101,8 @@ def names_filter(left: str, right: str) -> list:
 
     :param left: text in original language
     :param right: translation
+    :param left_lang: original language
+    :param right_lang: translation language
     :return: list with problematic parts (not correctly translated)
     """
     parts = re.findall(name_pattern, left)
@@ -118,37 +126,50 @@ exclamation_mark_pattern = re.compile(r"!\s.*[.?]\s*$")
 exclamation_mark_2_pattern = re.compile(r"!\s*$")
 
 
-def interpunction_filter(left: str, right: str) -> list:
+def interpunction_filter(left: str, right: str, left_lang: str, right_lang: str) -> list:
     """
     Find problems with interpunction.
 
     Problem is reported when there is ? or ! inside of sentence, and in the translation is the mark
     at the end. It ignores sentences, where there is more that one of that mark.
 
-    :param left:
-    :param right:
-    :return:
+    :param left: text in original language
+    :param right: translation
+    :param left_lang: original language
+    :param right_lang: translation language
+    :return: list of problematic parts
     """
+
+    problems = []
+
     if re.search(question_mark_pattern, left):
         if re.search(question_mark_2_pattern, right):
-            return ['interpunction-?']
+            problems.append('?')
 
     if re.search(question_mark_pattern, right):
         if re.search(question_mark_2_pattern, left):
-            return ['interpunction-?']
+            problems.append('?')
 
     if re.search(exclamation_mark_pattern, left):
         if re.search(exclamation_mark_2_pattern, right):
-            return ['interpunction-!']
+            problems.append('!')
 
     if re.search(exclamation_mark_pattern, right):
         if re.search(exclamation_mark_2_pattern, left):
-            return ['interpunction-!']
+            problems.append('!')
 
-    return []
+    return problems
 
 
-def filter_sentences(file: str, offset=0, limit=10000, numbers=False, interpunction=False, names=False) -> None:
+def filter_sentences(
+        file: str,
+        offset=0,
+        limit=10000,
+        left_lang='cs',
+        right_lang='en',
+        numbers=False,
+        interpunction=False,
+        names=False) -> None:
     """
     Process file line-by-line. Based on given parameters it can count in only part of input file.
     Each line is slitted into two parts (origin text and the translation) and sent to filters.
@@ -158,6 +179,8 @@ def filter_sentences(file: str, offset=0, limit=10000, numbers=False, interpunct
     :param file: name of input file
     :param offset: num of translated sentences to be ignored from start
     :param limit: num of translated sentences to be processed
+    :param left_lang: language of sentences on left
+    :param right_lang: language of sentences on right
     :param numbers: should be active numbers filter
     :param interpunction: should be active intepunction filter
     :param names: should be active names filter
@@ -184,11 +207,11 @@ def filter_sentences(file: str, offset=0, limit=10000, numbers=False, interpunct
 
             problems = []
             if numbers:
-                problems += numbers_filter(left, right)
+                problems += numbers_filter(left, right, left_lang, right_lang)
             if interpunction:
-                problems += interpunction_filter(left, right)
+                problems += interpunction_filter(left, right, left_lang, right_lang)
             if names:
-                problems += names_filter(left, right)
+                problems += names_filter(left, right, left_lang, right_lang)
 
             if len(problems):  # reporting errors
                 print(problems, left, right, sep='\n')
@@ -198,5 +221,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     filter_sentences(
         file=args.file, offset=args.offset, limit=args.limit,
+        left_lang=args.source_lang, right_lang=args.dest_lang,
         numbers=args.numbers, interpunction=args.interpunction, names=args.names
     )
