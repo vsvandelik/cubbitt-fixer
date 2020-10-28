@@ -1,10 +1,20 @@
 import re
+import argparse
 
 import digits_translation as dt
 import units
 
-number_patter = re.compile(rf"(\d+\s?(?:{units.unitsString})\b)")
-name_pattern = re.compile(r"^.+([A-Z][a-z]+\b)")
+
+parser = argparse.ArgumentParser()
+parser.add_argument("file", help="Name of file to be checked")
+
+parser.add_argument("--numbers", action="store_true", default=False, help="Filter numbers problems")
+parser.add_argument("--interpunction", action="store_true", default=False, help="Filter interpunction problems")
+parser.add_argument("--names", action="store_true", default=False, help="Filter names problems")
+
+parser.add_argument("--limit", default=100000, type=int, help="Count of sentences to be checked")
+parser.add_argument("--offset", default=0, help="Offset of sentences to be checked")
+
 
 def generate_translated_variants(number: int, rest: str) -> list:
     """
@@ -35,6 +45,9 @@ def generate_translated_variants(number: int, rest: str) -> list:
                 variants.append(pat.format(num, res))
 
     return variants
+
+
+number_patter = re.compile(rf"(\d+\s?(?:{units.unitsString})\b)")
 
 
 def numbers_filter(left: str, right: str) -> list:
@@ -69,6 +82,9 @@ def numbers_filter(left: str, right: str) -> list:
     return problems
 
 
+name_pattern = re.compile(r"^.+([A-Z][a-z]+\b)")
+
+
 def names_filter(left: str, right: str) -> list:
     """
     Experiment to filter translation problems with proper names. It searches for non-leading word with
@@ -95,7 +111,27 @@ def names_filter(left: str, right: str) -> list:
     return problems
 
 
-def filter_sentences(file: str, offset=0, limit=10000, ignore_limit=False) -> None:
+interpunction_pattern = re.compile(r"[.!?]\s[A-Z].*[.!?]")
+
+
+def interpunction_filter(left: str, right: str) -> list:
+    """
+    Find problems with interpunction.
+
+    Problem is reported when there is more than one interpunction mark in origin sentences.
+
+    :param left:
+    :param right:
+    :return:
+    """
+    parts = re.findall(interpunction_pattern, left)
+    if len(parts) == 0:  # any proper name in original text
+        return []
+
+    return ['interpunction']
+
+
+def filter_sentences(file: str, offset=0, limit=10000, numbers=False, interpunction=False, names=False) -> None:
     """
     Process file line-by-line. Based on given parameters it can count in only part of input file.
     Each line is slitted into two parts (origin text and the translation) and sent to filters.
@@ -103,9 +139,11 @@ def filter_sentences(file: str, offset=0, limit=10000, ignore_limit=False) -> No
     If filters find some error, the sentence is reported to the user by printing it.
 
     :param file: name of input file
-    :param offset: num of rows to be ignored from start
-    :param limit: num of rows to be processed
-    :param ignore_limit: switch if the offset and limit should be ignored
+    :param offset: num of translated sentences to be ignored from start
+    :param limit: num of translated sentences to be processed
+    :param numbers: should be active numbers filter
+    :param interpunction: should be active intepunction filter
+    :param names: should be active names filter
     :return: None
     """
     with open(file, "r", encoding="utf8") as input_file:
@@ -113,11 +151,10 @@ def filter_sentences(file: str, offset=0, limit=10000, ignore_limit=False) -> No
             next(input_file)
 
         last = None
-        for line in input_file:
-            if not ignore_limit:  # checking the limit
-                limit -= 1
-                if limit == 0:
-                    break
+        for line in input_file:  # checking the limit
+            limit -= 1
+            if limit == 0:
+                break
 
             if line.isspace():
                 continue
@@ -129,13 +166,20 @@ def filter_sentences(file: str, offset=0, limit=10000, ignore_limit=False) -> No
             last = left
 
             problems = []
-            problems += numbers_filter(left, right)
-            # problems += names_filter(left, right)
+            if numbers:
+                problems += numbers_filter(left, right)
+            if interpunction:
+                problems += interpunction_filter(left, right)
+            if names:
+                problems += names_filter(left, right)
 
             if len(problems):  # reporting errors
                 print(problems, left, right, sep='\n')
 
 
 if __name__ == "__main__":
-    filter_sentences("sentences", limit=5000000)
-    # filter_sentences("vzorek")
+    args = parser.parse_args()
+    filter_sentences(
+        file=args.file, offset=args.offset, limit=args.limit,
+        numbers=args.numbers, interpunction=args.interpunction, names=args.names
+    )
