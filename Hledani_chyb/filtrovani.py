@@ -111,24 +111,41 @@ def names_filter(left: str, right: str) -> list:
     return problems
 
 
-interpunction_pattern = re.compile(r"[.!?]\s[A-Z].*[.!?]")
+multiple_interpunction_pattern = re.compile(r"[.!?]\s[A-Z].*[.!?]")
+question_mark_pattern = re.compile(r"\?\s.*[.!]\s*$")
+question_mark_2_pattern = re.compile(r"\?\s*$")
+exclamation_mark_pattern = re.compile(r"!\s.*[.?]\s*$")
+exclamation_mark_2_pattern = re.compile(r"!\s*$")
 
 
 def interpunction_filter(left: str, right: str) -> list:
     """
     Find problems with interpunction.
 
-    Problem is reported when there is more than one interpunction mark in origin sentences.
+    Problem is reported when there is ? or ! inside of sentence, and in the translation is the mark
+    at the end. It ignores sentences, where there is more that one of that mark.
 
     :param left:
     :param right:
     :return:
     """
-    parts = re.findall(interpunction_pattern, left)
-    if len(parts) == 0:  # any proper name in original text
-        return []
+    if re.search(question_mark_pattern, left):
+        if re.search(question_mark_2_pattern, right):
+            return ['interpunction-?']
 
-    return ['interpunction']
+    if re.search(question_mark_pattern, right):
+        if re.search(question_mark_2_pattern, left):
+            return ['interpunction-?']
+
+    if re.search(exclamation_mark_pattern, left):
+        if re.search(exclamation_mark_2_pattern, right):
+            return ['interpunction-!']
+
+    if re.search(exclamation_mark_pattern, right):
+        if re.search(exclamation_mark_2_pattern, left):
+            return ['interpunction-!']
+
+    return []
 
 
 def filter_sentences(file: str, offset=0, limit=10000, numbers=False, interpunction=False, names=False) -> None:
