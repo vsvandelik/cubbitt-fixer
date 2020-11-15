@@ -54,6 +54,10 @@ def generate_translated_variants(number: int, rest: str, left_lang: str, recalcu
 
 
 number_patter = re.compile(rf"(\d+\s?(?:{_units.unitsString})\b)")
+approx_phrases = {
+    'cs': ['cca', 'zhruba', 'přibližně', 'asi', 'asi tak'],
+    'en': ['about', 'around', 'roughly', 'approximately']
+}
 
 
 def numbers_filter(left: str, right: str, left_lang: str, right_lang: str) -> list:
@@ -75,6 +79,11 @@ def numbers_filter(left: str, right: str, left_lang: str, right_lang: str) -> li
     problems = []
 
     for part in parts:
+
+        approximately = ""
+        if re.search(f"({'|'.join(approx_phrases[left_lang])}) {part}"   , left):
+            approximately = "cca "
+
         number = rest = None
         for idx in range(0, len(part)):
             if not part[idx].isdigit():
@@ -86,7 +95,7 @@ def numbers_filter(left: str, right: str, left_lang: str, right_lang: str) -> li
         variants = generate_translated_variants(number, rest, left_lang, recalculated_number, recalculated_rest)
         found = re.search("|".join(variants), right)
         if not found:
-            problems.append("{} = {:.2f} {}".format(part, recalculated_number, recalculated_rest))
+            problems.append("{}{} = {:.2f} {}".format(approximately, part, recalculated_number, recalculated_rest))
 
     return problems
 
