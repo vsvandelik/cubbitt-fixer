@@ -1,8 +1,10 @@
+#!/usr/bin/python3.8
+
 import re
 import argparse
 
-import digits_translation as dt
-import units
+import _digits_translation as dt
+import _units
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file", help="Name of file to be checked")
@@ -17,7 +19,7 @@ parser.add_argument("--limit", default=100000, type=int, help="Count of sentence
 parser.add_argument("--offset", default=0, help="Offset of sentences to be checked")
 
 
-def generate_translated_variants(number: int, rest: str, left_lang: str) -> list:
+def generate_translated_variants(number: int, rest: str, left_lang: str, recalculated_number: float, recalculated_rest: str) -> list:
     """
     Generates all possible variants (cartesian product) of number with unit.
 
@@ -39,7 +41,7 @@ def generate_translated_variants(number: int, rest: str, left_lang: str) -> list
     elif left_lang == 'en' and number in dt.cs.keys():
         numbers.append(dt.cs[number])
 
-    rests = [rest] + units.units[rest]
+    rests = [rest] + _units.units[rest]
 
     variants = []
 
@@ -51,7 +53,7 @@ def generate_translated_variants(number: int, rest: str, left_lang: str) -> list
     return variants
 
 
-number_patter = re.compile(rf"(\d+\s?(?:{units.unitsString})\b)")
+number_patter = re.compile(rf"(\d+\s?(?:{_units.unitsString})\b)")
 
 
 def numbers_filter(left: str, right: str, left_lang: str, right_lang: str) -> list:
@@ -77,13 +79,14 @@ def numbers_filter(left: str, right: str, left_lang: str, right_lang: str) -> li
         for idx in range(0, len(part)):
             if not part[idx].isdigit():
                 number = int(part[:idx].strip())
-                rest = part[idx:].strip()
+                rest = part[idx:].strip(' -')
                 break
-
-        variants = generate_translated_variants(number, rest, left_lang)
+        
+        recalculated_number, recalculated_rest = _units.convert_unit(number, rest)
+        variants = generate_translated_variants(number, rest, left_lang, recalculated_number, recalculated_rest)
         found = re.search("|".join(variants), right)
         if not found:
-            problems.append(part)
+            problems.append("{} = {:.2f} {}".format(part, recalculated_number, recalculated_rest))
 
     return problems
 
@@ -169,7 +172,7 @@ def filter_sentences(
         right_lang='en',
         numbers=False,
         interpunction=False,
-        names=False) -> None:
+        names=False) -> list:
     """
     Process file line-by-line. Based on given parameters it can count in only part of input file.
     Each line is slitted into two parts (origin text and the translation) and sent to filters.
@@ -184,8 +187,11 @@ def filter_sentences(
     :param numbers: should be active numbers filter
     :param interpunction: should be active intepunction filter
     :param names: should be active names filter
-    :return: None
+    :return: list of tuples with possible problems
     """
+
+    resuls = []
+
     with open(file, "r", encoding="utf8") as input_file:
         for _ in range(offset):  # skipping the offset
             next(input_file)
@@ -214,13 +220,18 @@ def filter_sentences(
                 problems += names_filter(left, right, left_lang, right_lang)
 
             if len(problems):  # reporting errors
-                print(problems, left, right, sep='\n')
+                resuls.append((problems, left, right))
+
+    return resuls
 
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    filter_sentences(
+    problems = filter_sentences(
         file=args.file, offset=args.offset, limit=args.limit,
         left_lang=args.source_lang, right_lang=args.dest_lang,
         numbers=args.numbers, interpunction=args.interpunction, names=args.names
     )
+
+    for problem in problems:
+        print(problem[0], problem[1], problem[2], sep='\n')
