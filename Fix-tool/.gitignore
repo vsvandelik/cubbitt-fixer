@@ -1,9 +1,2 @@
-# ignore all
-*
-
-# except
-!*.py
-!*.sh
-!*.md
-!*.txt
-!.gitignore
+static_files/
+.idea/
