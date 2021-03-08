@@ -3,7 +3,7 @@ import re
 from typing import Union, Optional, List, Tuple
 
 import _digits_translation as dt
-import _units
+from _units import units, Unit
 
 Number = Union[int, float]
 
@@ -56,9 +56,14 @@ class NumberFixer:
         self.source_lang = source_lang
         self.target_lang = target_lang
 
+        source_lang_int = 0 if source_lang == 'cs' else 1
+        target_lang_int = 0 if target_lang == 'cs' else 1
+
         # preparing regex patterns based on supported units
-        self.number_patter_source = re.compile(rf"(\d[\d .,]*[\s-]?(?:{_units.units_strings[source_lang]})\b)")
-        self.number_patter_target = re.compile(rf"(\d[\d .,]*[\s-]?(?:{_units.units_strings[target_lang]})\b)")
+        self.number_patter_source = re.compile(
+            rf"(\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(source_lang_int)})\b)")
+        self.number_patter_target = re.compile(
+            rf"(\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(target_lang_int)})\b)")
 
     def fix_numbers_problems(self, original_text: str, translated_text: str) -> Optional[Union[str, bool]]:
         """Fix numbers problems in given sentence based on original text and translated text.
@@ -87,7 +92,8 @@ class NumberFixer:
         else:
             return None
 
-    def __fix_single_number(self, problem_part: Tuple[bool, Number, str], original_text: str, translated_text: str) -> Optional[Union[str, bool]]:
+    def __fix_single_number(self, problem_part: Tuple[bool, Number, Unit], original_text: str, translated_text: str) -> \
+            Optional[Union[str, bool]]:
         """Fix sentence with single number problem.
 
         It searches for matching number in both original and translated text and compares numbers and units.
@@ -105,22 +111,20 @@ class NumberFixer:
         translated_parts = re.findall(self.number_patter_target, translated_text)
 
         for translated_part in translated_parts:
-            tr_number, tr_unit = self.__split_number_unit(translated_part, self.DECIMAL_SEPARATORS[self.target_lang])
-
-            # verifies if units in original and translated texts are the same
-            source_unit_category = _units.units_categories[self.source_lang][unit]
-            target_units_in_category = _units.units[source_unit_category][self.target_lang]
+            tr_number, tr_unit = self.__split_number_unit(translated_part, self.DECIMAL_SEPARATORS[self.target_lang],
+                                                          self.target_lang)
 
             # same number, same unit
-            if number == tr_number and tr_unit in target_units_in_category:
+            if number == tr_number and unit.category == tr_unit.category:
                 return True
 
             # same number, different unit
-            elif number == tr_number and tr_unit not in target_units_in_category:
-                pass
+            elif number == tr_number and unit.category != tr_unit.category:
+                suitable_unit = units.get_correct_unit(0 if self.target_lang == 'cs' else 1, number, unit, tr_unit)
+                return translated_text.replace(tr_unit.word, suitable_unit.word)
 
             # different number, same unit
-            elif number != tr_number and tr_unit in target_units_in_category:
+            elif number != tr_number and unit.category == tr_unit.category:
 
                 # verifies if the problem is caused by untranslated decimal separator
                 problem_with_separator = self.__fix_wrong_decimal_separator(number, tr_number, translated_part,
@@ -134,7 +138,7 @@ class NumberFixer:
 
         return False
 
-    def __find_numbers_units(self, text: str) -> List[Tuple[bool, Number, str]]:
+    def __find_numbers_units(self, text: str) -> List[Tuple[bool, Number, Unit]]:
         """Search in sentence for number-unit parts
 
         When some part is found, it is divided into three parts - approximately (whenever the number is precise or not),
@@ -156,7 +160,7 @@ class NumberFixer:
             if re.search(f"({'|'.join(self.APPROXIMATELY_PHRASES[self.source_lang])}) {part}", text):
                 approximately = True
 
-            number, unit = self.__split_number_unit(part, self.DECIMAL_SEPARATORS[self.source_lang])
+            number, unit = self.__split_number_unit(part, self.DECIMAL_SEPARATORS[self.source_lang], self.source_lang)
 
             problems.append((approximately, number, unit))
 
@@ -176,7 +180,7 @@ class NumberFixer:
 
         # tries to split number with opposite decimal separator
         tr_number_another_separator, _ = self.__split_number_unit(
-            number_unit_translated, self.DECIMAL_SEPARATORS[self.source_lang])
+            number_unit_translated, self.DECIMAL_SEPARATORS[self.source_lang], self.target_lang)
 
         if number_original == tr_number_another_separator:
             original_string_number = self.__get_string_number(number_unit_translated)
@@ -193,7 +197,7 @@ class NumberFixer:
         return None
 
     @staticmethod
-    def __split_number_unit(text: str, decimal_separator: str) -> Tuple[Number, str]:
+    def __split_number_unit(text: str, decimal_separator: str, language: str) -> Tuple[Number, Unit]:
         """Split number-unit sentence part into separate variables.
 
         Number is parsed as a float or int. It uses language specific decimal separator.
@@ -228,6 +232,9 @@ class NumberFixer:
         else:
             number = int("".join(number_string))
 
+        language_int = 0 if language == 'cs' else 1
+        unit = units.get_unit_by_word(unit, language_int)
+
         return number, unit
 
     @staticmethod
@@ -243,7 +250,7 @@ class NumberFixer:
                 return text[:idx].strip()
 
     @staticmethod
-    def __generate_translated_variants(number: int, rest: str, lang: str) -> List[str]:
+    def __generate_translated_variants(number: int, rest: Unit, lang: str) -> List[str]:
         """Generates all possible variants (cartesian product) of number with unit.
 
         Actual supported patterns are:
@@ -259,14 +266,15 @@ class NumberFixer:
         """
 
         patterns = ["{}{}", "{} {}", "{}-{}"]
+        rests = []
 
         numbers = [number, '{:,}'.format(number)]
         if lang == 'cs' and number in dt.en.keys():  # rewrite digit as a string
             numbers.append(dt.en[number])
+            rests = [rest.word] + units.get_words_by_category_language(rest.category, 1)
         elif lang == 'en' and number in dt.cs.keys():
             numbers.append(dt.cs[number])
-
-        rests = [rest] + _units.units[rest]
+            rests = [rest.word] + units.get_words_by_category_language(rest.category, 0)
 
         variants = []
 
