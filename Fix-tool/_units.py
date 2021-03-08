@@ -3,10 +3,19 @@ units = {
         'cs': ['km/h', 'kph', 'kilometr za hodinu', 'kilometry za hodinu', 'kilometrů za hodinu', 'kilometrů v hodině',
                'kilometr v hodině', 'kilometry v hodině'],
         'en': ['km/h', 'kph', 'kilometers per hour', 'kilometer per hour', 'kilometres per hour', 'kilometres an hour',
-               'kilometers an hour']},
+               'kilometers an hour', 'kilometer-an-hour']},
     'm/s': {
         'cs': ['m/s', 'mps', 'metr za sekundu', 'metry za sekundu', 'metrů za sekundu', 'metru za sekundu'],
         'en': ['m/s', 'mps', 'meters per second', 'meter per second']},
+    'm2': {
+        'cs': ['metr čtvereční', 'metru čtverečního', 'metry čtvereční', 'metrů čtverečních'],
+        'en': ['square meter', 'square meters', 'square metre', 'square metres', 'square-metre', 'square-meter']},
+    'km2': {
+        'cs': ['kilometr čtvereční', 'kilometru čtverečního', 'kilometry čtvereční', 'kilometrů čtverečních'],
+        'en': ['square kilometer', 'square kilometers', 'square kilometre', 'square kilometres', 'square-kilometre', 'square-kilometer']},
+    'm3': {
+        'cs': ['metr krychlový', 'metru krychlového', 'metry krychlové', 'metrů krychlových'],
+        'en': ['cubic meter', 'cubic meters', 'cubic metre', 'cubic metres']},
     'km': {
         'cs': ['km', 'kilometr', 'kilometry', 'kilometrů', 'kilometru'],
         'en': ['km', 'kilometers', 'kilometer', 'kilometre', 'kilometres']},
@@ -21,7 +30,7 @@ units = {
         'en': ['cm', 'centimeters', 'centimeter', 'centimetre', 'centimetre', 'centimetres']},
     'mm': {
         'cs': ['mm', 'milimetr', 'milimetry', 'milimetrů'],
-        'en': ['mm', 'millimeters', 'millimeter', 'milimetre', 'milimetres']},
+        'en': ['mm', 'millimeters', 'millimeter', 'milimetre', 'millimetre', 'milimetres', 'millimetres']},
     'g': {
         'cs': ['g', 'gram', 'gramy', 'gramů'],
         'en': ['g', 'grams', 'gram']},

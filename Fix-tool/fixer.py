@@ -57,8 +57,8 @@ class NumberFixer:
         self.target_lang = target_lang
 
         # preparing regex patterns based on supported units
-        self.number_patter_source = re.compile(rf"(\d[\d .,]*\s?(?:{_units.units_strings[source_lang]})\b)")
-        self.number_patter_target = re.compile(rf"(\d[\d .,]*\s?(?:{_units.units_strings[target_lang]})\b)")
+        self.number_patter_source = re.compile(rf"(\d[\d .,]*[\s-]?(?:{_units.units_strings[source_lang]})\b)")
+        self.number_patter_target = re.compile(rf"(\d[\d .,]*[\s-]?(?:{_units.units_strings[target_lang]})\b)")
 
     def fix_numbers_problems(self, original_text: str, translated_text: str) -> Optional[Union[str, bool]]:
         """Fix numbers problems in given sentence based on original text and translated text.
@@ -87,11 +87,12 @@ class NumberFixer:
         else:
             return None
 
-    def __fix_single_number(self, problem_part, original_text: str, translated_text: str) -> Optional[Union[str,bool]]:
+    def __fix_single_number(self, problem_part: Tuple[bool, Number, str], original_text: str, translated_text: str) -> Optional[Union[str, bool]]:
         """Fix sentence with single number problem.
 
         It searches for matching number in both original and translated text and compares numbers and units.
 
+        :param problem_part: extracted problematic part from the original sentence
         :param original_text: Text in source language for verifying the translation.
         :param translated_text: Text translated by translator.
         :return: repaired sentence or True when sentence is correct or False when sentence cannot be fixed
@@ -103,33 +104,35 @@ class NumberFixer:
         # find all number-unit pairs in translated text
         translated_parts = re.findall(self.number_patter_target, translated_text)
 
-        fixed_sentence = True
-
         for translated_part in translated_parts:
             tr_number, tr_unit = self.__split_number_unit(translated_part, self.DECIMAL_SEPARATORS[self.target_lang])
 
             # verifies if units in original and translated texts are the same
             source_unit_category = _units.units_categories[self.source_lang][unit]
             target_units_in_category = _units.units[source_unit_category][self.target_lang]
-            if tr_unit not in target_units_in_category:
-                fixed_sentence = False
-                # TODO: Recalculating test
-                # TODO: Replace with correct unit in a right form
 
-            # verifies if the numbers are the same
-            elif number != tr_number:
+            # same number, same unit
+            if number == tr_number and tr_unit in target_units_in_category:
+                return True
+
+            # same number, different unit
+            elif number == tr_number and tr_unit not in target_units_in_category:
+                pass
+
+            # different number, same unit
+            elif number != tr_number and tr_unit in target_units_in_category:
 
                 # verifies if the problem is caused by untranslated decimal separator
-                problem_with_separator = self.__fix_wrong_decimal_separator(number, tr_number, translated_part, translated_text)
+                problem_with_separator = self.__fix_wrong_decimal_separator(number, tr_number, translated_part,
+                                                                            translated_text)
                 if problem_with_separator:
-                    fixed_sentence = problem_with_separator
+                    return problem_with_separator
 
-                else:
-                    fixed_sentence = False
+            # different number, different unit
+            else:
+                pass
 
-                # TODO: Recalculating test
-
-        return fixed_sentence
+        return False
 
     def __find_numbers_units(self, text: str) -> List[Tuple[bool, Number, str]]:
         """Search in sentence for number-unit parts
@@ -273,5 +276,3 @@ class NumberFixer:
                     variants.append(pat.format(num, res))
 
         return variants
-
-
