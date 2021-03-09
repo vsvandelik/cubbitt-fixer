@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Union, Optional, List
 
+from _languages import Language, Languages
+
 
 class UnitCategory(Enum):
     KMH = 0
@@ -23,17 +25,12 @@ class UnitDialect(Enum):
     AmE = 1  # American english
 
 
-class UnitLanguage(Enum):
-    CS = 0
-    EN = 1
-
-
 class Unit:
 
     def __init__(self,
                  word: str,
                  category: UnitCategory,
-                 language: UnitLanguage,
+                 language: Language,
                  numbers_validity: Optional[List[Union[int, tuple, object]]],
                  recalculators: list,
                  abbreviation: bool,
@@ -43,7 +40,7 @@ class Unit:
         self.language = language
         self.numbers_validity = numbers_validity
         self.recalculators = recalculators
-        self.abbreviation = bool
+        self.abbreviation = abbreviation
 
         if dialect:
             self.dialect = dialect
@@ -85,10 +82,10 @@ class UnitsWrapper:
     def add_unit(self, unit: Unit):
         self.__units.append(unit)
 
-    def get_correct_unit(self, language: int, number: Union[float, int], original_unit: Unit, replacement_for: Unit):
+    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, replacement_for: Unit):
         options_list = []
         for unit in self.__units:
-            if unit.language.value != language or unit.category != original_unit.category:
+            if unit.language != language or unit.category != original_unit.category:
                 continue
 
             score = 0
@@ -109,36 +106,34 @@ class UnitsWrapper:
         options_list.sort(key=lambda tup: tup[0], reverse=True)
         return options_list[0][1]
 
-
-    def get_words_by_category_language(self, category: int, language: int) -> List[str]:
+    def get_words_by_category_language(self, category: int, language: Language) -> List[str]:
         words = []
         for unit in self.__units:
-            if unit.category == category and unit.language.value == language:
+            if unit.category == category and unit.language == language:
                 words.append(unit.word)
 
         return words
 
-    def get_unit_by_word(self, word: str, language: int) -> Optional[Unit]:
+    def get_unit_by_word(self, word: str, language: Language) -> Optional[Unit]:
         for unit in self.__units:
-            if unit.language.value == language and unit.word == word:
+            if unit.language == language and unit.word == word:
                 return unit
 
         return None
 
-    def get_regex_units_for_language(self, language: int) -> str:
+    def get_regex_units_for_language(self, language: Language) -> str:
         units_for_language = self.get_all_units_for_language(language)
 
         return '|'.join([unit.word for unit in units_for_language])
 
-    def get_all_units_for_language(self, language: int) -> List[Unit]:
+    def get_all_units_for_language(self, language: Language) -> List[Unit]:
         if language not in self.__units_by_languages.keys():
             self.__units_by_languages[language] = []
             for unit in self.__units:
-                if unit.language.value == language:
+                if unit.language == language:
                     self.__units_by_languages[language].append(unit)
 
         return self.__units_by_languages[language]
-
 
 
 numbers_validity_ones = [-1, 1]
@@ -149,166 +144,166 @@ numbers_validity_decimal = [float]
 
 units = UnitsWrapper()
 
-units.add_unit(Unit('km/h', UnitCategory.KMH, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('kph', UnitCategory.KMH, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('kilometr za hodinu', UnitCategory.KMH, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('kilometry za hodinu', UnitCategory.KMH, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('kilometrů za hodinu', UnitCategory.KMH, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
-units.add_unit(Unit('kilometru za hodinu', UnitCategory.KMH, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
-units.add_unit(Unit('kilometru v hodině', UnitCategory.KMH, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
-units.add_unit(Unit('kilometrů v hodině', UnitCategory.KMH, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
-units.add_unit(Unit('kilometr v hodině', UnitCategory.KMH, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('kilometry v hodině', UnitCategory.KMH, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('km/h', UnitCategory.KMH, Languages.CS, None, [], True, None))
+units.add_unit(Unit('kph', UnitCategory.KMH, Languages.CS, None, [], True, None))
+units.add_unit(Unit('kilometr za hodinu', UnitCategory.KMH, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('kilometry za hodinu', UnitCategory.KMH, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('kilometrů za hodinu', UnitCategory.KMH, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('kilometru za hodinu', UnitCategory.KMH, Languages.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('kilometru v hodině', UnitCategory.KMH, Languages.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('kilometrů v hodině', UnitCategory.KMH, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('kilometr v hodině', UnitCategory.KMH, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('kilometry v hodině', UnitCategory.KMH, Languages.CS, numbers_validity_2_3_4, [], False, None))
 
-units.add_unit(Unit('km/h', UnitCategory.KMH, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('kph', UnitCategory.KMH, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('kilometers per hour', UnitCategory.KMH, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('kilometer per hour', UnitCategory.KMH, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('kilometre per hour', UnitCategory.KMH, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('kilometres per hour', UnitCategory.KMH, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
-units.add_unit(Unit('kilometres an hour', UnitCategory.KMH, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
-units.add_unit(Unit('kilometers an hour', UnitCategory.KMH, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('kilometer an hour', UnitCategory.KMH, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('kilometre an hour', UnitCategory.KMH, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('kilometer-an-hour', UnitCategory.KMH, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('kilometre-an-hour', UnitCategory.KMH, UnitLanguage.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('km/h', UnitCategory.KMH, Languages.EN, None, [], True, None))
+units.add_unit(Unit('kph', UnitCategory.KMH, Languages.EN, None, [], True, None))
+units.add_unit(Unit('kilometers per hour', UnitCategory.KMH, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('kilometer per hour', UnitCategory.KMH, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('kilometre per hour', UnitCategory.KMH, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('kilometres per hour', UnitCategory.KMH, Languages.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('kilometres an hour', UnitCategory.KMH, Languages.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('kilometers an hour', UnitCategory.KMH, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('kilometer an hour', UnitCategory.KMH, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('kilometre an hour', UnitCategory.KMH, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('kilometer-an-hour', UnitCategory.KMH, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('kilometre-an-hour', UnitCategory.KMH, Languages.EN, numbers_validity_ones, [], False, None))
 
-units.add_unit(Unit('m/s', UnitCategory.MS, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('mps', UnitCategory.MS, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('metr za sekundu', UnitCategory.MS, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('metry za sekundu', UnitCategory.MS, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('metrů za sekundu', UnitCategory.MS, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
-units.add_unit(Unit('metru za sekundu', UnitCategory.MS, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('m/s', UnitCategory.MS, Languages.CS, None, [], True, None))
+units.add_unit(Unit('mps', UnitCategory.MS, Languages.CS, None, [], True, None))
+units.add_unit(Unit('metr za sekundu', UnitCategory.MS, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('metry za sekundu', UnitCategory.MS, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('metrů za sekundu', UnitCategory.MS, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('metru za sekundu', UnitCategory.MS, Languages.CS, numbers_validity_decimal, [], False, None))
 
-units.add_unit(Unit('m/s', UnitCategory.MS, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('mps', UnitCategory.MS, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('meters per second', UnitCategory.MS, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('meter per second', UnitCategory.MS, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('metres per second', UnitCategory.MS, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
-units.add_unit(Unit('metre per second', UnitCategory.MS, UnitLanguage.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('m/s', UnitCategory.MS, Languages.EN, None, [], True, None))
+units.add_unit(Unit('mps', UnitCategory.MS, Languages.EN, None, [], True, None))
+units.add_unit(Unit('meters per second', UnitCategory.MS, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('meter per second', UnitCategory.MS, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('metres per second', UnitCategory.MS, Languages.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('metre per second', UnitCategory.MS, Languages.EN, numbers_validity_ones, [], False, None))
 
-units.add_unit(Unit('metr čtvereční', UnitCategory.M2, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('metru čtverečního', UnitCategory.M2, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
-units.add_unit(Unit('metry čtvereční', UnitCategory.M2, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('metrů čtverečních', UnitCategory.M2, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('metr čtvereční', UnitCategory.M2, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('metru čtverečního', UnitCategory.M2, Languages.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('metry čtvereční', UnitCategory.M2, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('metrů čtverečních', UnitCategory.M2, Languages.CS, numbers_validity_more_than_5, [], False, None))
 
-units.add_unit(Unit('square meter', UnitCategory.M2, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('square meters', UnitCategory.M2, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('square metre', UnitCategory.M2, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('square metres', UnitCategory.M2, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
-units.add_unit(Unit('square-metre', UnitCategory.M2, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('square-meter', UnitCategory.M2, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('square meter', UnitCategory.M2, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('square meters', UnitCategory.M2, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('square metre', UnitCategory.M2, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('square metres', UnitCategory.M2, Languages.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('square-metre', UnitCategory.M2, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('square-meter', UnitCategory.M2, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
 
-units.add_unit(Unit('kilometr čtvereční', UnitCategory.KM2, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('kilometru čtverečního', UnitCategory.KM2, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
-units.add_unit(Unit('kilometry čtvereční', UnitCategory.KM2, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('kilometrů čtverečních', UnitCategory.KM2, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('kilometr čtvereční', UnitCategory.KM2, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('kilometru čtverečního', UnitCategory.KM2, Languages.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('kilometry čtvereční', UnitCategory.KM2, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('kilometrů čtverečních', UnitCategory.KM2, Languages.CS, numbers_validity_more_than_5, [], False, None))
 
-units.add_unit(Unit('square kilometer', UnitCategory.KM2, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('square kilometers', UnitCategory.KM2, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('square kilometre', UnitCategory.KM2, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('square kilometres', UnitCategory.KM2, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
-units.add_unit(Unit('square-kilometre', UnitCategory.KM2, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('square-kilometer', UnitCategory.KM2, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('square kilometer', UnitCategory.KM2, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('square kilometers', UnitCategory.KM2, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('square kilometre', UnitCategory.KM2, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('square kilometres', UnitCategory.KM2, Languages.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('square-kilometre', UnitCategory.KM2, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('square-kilometer', UnitCategory.KM2, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
 
-units.add_unit(Unit('metr krychlový', UnitCategory.M3, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('metru krychlového', UnitCategory.M3, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
-units.add_unit(Unit('metry krychlové', UnitCategory.M3, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('metrů krychlových', UnitCategory.M3, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('metr krychlový', UnitCategory.M3, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('metru krychlového', UnitCategory.M3, Languages.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('metry krychlové', UnitCategory.M3, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('metrů krychlových', UnitCategory.M3, Languages.CS, numbers_validity_more_than_5, [], False, None))
 
-units.add_unit(Unit('cubic meter', UnitCategory.M3, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('cubic meters', UnitCategory.M3, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('cubic metre', UnitCategory.M3, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('cubic metres', UnitCategory.M3, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('cubic meter', UnitCategory.M3, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('cubic meters', UnitCategory.M3, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('cubic metre', UnitCategory.M3, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('cubic metres', UnitCategory.M3, Languages.EN, numbers_validity_not_ones, [], False, None))
 
-units.add_unit(Unit('km', UnitCategory.KM, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('kilometr', UnitCategory.KM, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('kilometry', UnitCategory.KM, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('kilometrů', UnitCategory.KM, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
-units.add_unit(Unit('kilometru', UnitCategory.KM, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('km', UnitCategory.KM, Languages.CS, None, [], True, None))
+units.add_unit(Unit('kilometr', UnitCategory.KM, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('kilometry', UnitCategory.KM, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('kilometrů', UnitCategory.KM, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('kilometru', UnitCategory.KM, Languages.CS, numbers_validity_decimal, [], False, None))
 
-units.add_unit(Unit('km', UnitCategory.KM, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('kilometers', UnitCategory.KM, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('kilometer', UnitCategory.KM, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('kilometre', UnitCategory.KM, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('kilometres', UnitCategory.KM, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('km', UnitCategory.KM, Languages.EN, None, [], True, None))
+units.add_unit(Unit('kilometers', UnitCategory.KM, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('kilometer', UnitCategory.KM, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('kilometre', UnitCategory.KM, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('kilometres', UnitCategory.KM, Languages.EN, numbers_validity_not_ones, [], False, None))
 
-units.add_unit(Unit('m', UnitCategory.M, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('metr', UnitCategory.M, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('metry', UnitCategory.M, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('metrů', UnitCategory.M, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
-units.add_unit(Unit('metru', UnitCategory.M, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('m', UnitCategory.M, Languages.CS, None, [], True, None))
+units.add_unit(Unit('metr', UnitCategory.M, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('metry', UnitCategory.M, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('metrů', UnitCategory.M, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('metru', UnitCategory.M, Languages.CS, numbers_validity_decimal, [], False, None))
 
-units.add_unit(Unit('m', UnitCategory.M, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('meters', UnitCategory.M, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('meter', UnitCategory.M, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('metre', UnitCategory.M, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('metres', UnitCategory.M, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('m', UnitCategory.M, Languages.EN, None, [], True, None))
+units.add_unit(Unit('meters', UnitCategory.M, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('meter', UnitCategory.M, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('metre', UnitCategory.M, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('metres', UnitCategory.M, Languages.EN, numbers_validity_not_ones, [], False, None))
 
-units.add_unit(Unit('dm', UnitCategory.DM, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('decimetr', UnitCategory.DM, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('decimetry', UnitCategory.DM, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('decimetrů', UnitCategory.DM, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
-units.add_unit(Unit('decimetru', UnitCategory.DM, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('dm', UnitCategory.DM, Languages.CS, None, [], True, None))
+units.add_unit(Unit('decimetr', UnitCategory.DM, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('decimetry', UnitCategory.DM, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('decimetrů', UnitCategory.DM, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('decimetru', UnitCategory.DM, Languages.CS, numbers_validity_decimal, [], False, None))
 
-units.add_unit(Unit('dm', UnitCategory.DM, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('decimeters', UnitCategory.DM, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('decimeter', UnitCategory.DM, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('decimetre', UnitCategory.DM, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('decimetres', UnitCategory.DM, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('dm', UnitCategory.DM, Languages.EN, None, [], True, None))
+units.add_unit(Unit('decimeters', UnitCategory.DM, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('decimeter', UnitCategory.DM, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('decimetre', UnitCategory.DM, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('decimetres', UnitCategory.DM, Languages.EN, numbers_validity_not_ones, [], False, None))
 
-units.add_unit(Unit('cm', UnitCategory.CM, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('centimetr', UnitCategory.CM, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('centimetry', UnitCategory.CM, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('centimetrů', UnitCategory.CM, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
-units.add_unit(Unit('centimetru', UnitCategory.CM, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('cm', UnitCategory.CM, Languages.CS, None, [], True, None))
+units.add_unit(Unit('centimetr', UnitCategory.CM, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('centimetry', UnitCategory.CM, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('centimetrů', UnitCategory.CM, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('centimetru', UnitCategory.CM, Languages.CS, numbers_validity_decimal, [], False, None))
 
-units.add_unit(Unit('cm', UnitCategory.CM, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('centimeters', UnitCategory.CM, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('centimeter', UnitCategory.CM, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('centimetre', UnitCategory.CM, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('centimetres', UnitCategory.CM, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('cm', UnitCategory.CM, Languages.EN, None, [], True, None))
+units.add_unit(Unit('centimeters', UnitCategory.CM, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('centimeter', UnitCategory.CM, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('centimetre', UnitCategory.CM, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('centimetres', UnitCategory.CM, Languages.EN, numbers_validity_not_ones, [], False, None))
 
-units.add_unit(Unit('mm', UnitCategory.MM, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('milimetr', UnitCategory.MM, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('milimetry', UnitCategory.MM, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('milimetrů', UnitCategory.MM, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
-units.add_unit(Unit('milimetru', UnitCategory.MM, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('mm', UnitCategory.MM, Languages.CS, None, [], True, None))
+units.add_unit(Unit('milimetr', UnitCategory.MM, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('milimetry', UnitCategory.MM, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('milimetrů', UnitCategory.MM, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('milimetru', UnitCategory.MM, Languages.CS, numbers_validity_decimal, [], False, None))
 
-units.add_unit(Unit('mm', UnitCategory.MM, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('millimeters', UnitCategory.MM, UnitLanguage.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('millimeter', UnitCategory.MM, UnitLanguage.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
-units.add_unit(Unit('milimetre', UnitCategory.MM, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('millimetre', UnitCategory.MM, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('milimetres', UnitCategory.MM, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
-units.add_unit(Unit('millimetres', UnitCategory.MM, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('mm', UnitCategory.MM, Languages.EN, None, [], True, None))
+units.add_unit(Unit('millimeters', UnitCategory.MM, Languages.EN, numbers_validity_not_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('millimeter', UnitCategory.MM, Languages.EN, numbers_validity_ones, [], False, UnitDialect.AmE))
+units.add_unit(Unit('milimetre', UnitCategory.MM, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('millimetre', UnitCategory.MM, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('milimetres', UnitCategory.MM, Languages.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('millimetres', UnitCategory.MM, Languages.EN, numbers_validity_not_ones, [], False, None))
 
-units.add_unit(Unit('g', UnitCategory.G, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('gram', UnitCategory.G, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('gramy', UnitCategory.G, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('gramů', UnitCategory.G, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
-units.add_unit(Unit('gramu', UnitCategory.G, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('g', UnitCategory.G, Languages.CS, None, [], True, None))
+units.add_unit(Unit('gram', UnitCategory.G, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('gramy', UnitCategory.G, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('gramů', UnitCategory.G, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('gramu', UnitCategory.G, Languages.CS, numbers_validity_decimal, [], False, None))
 
-units.add_unit(Unit('g', UnitCategory.G, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('grams', UnitCategory.G, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
-units.add_unit(Unit('gram', UnitCategory.G, UnitLanguage.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('g', UnitCategory.G, Languages.EN, None, [], True, None))
+units.add_unit(Unit('grams', UnitCategory.G, Languages.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('gram', UnitCategory.G, Languages.EN, numbers_validity_ones, [], False, None))
 
-units.add_unit(Unit('kg', UnitCategory.KG, UnitLanguage.CS, None, [], True, None))
-units.add_unit(Unit('kilogram', UnitCategory.KG, UnitLanguage.CS, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('kilogramy', UnitCategory.KG, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('kilogramů', UnitCategory.KG, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
-units.add_unit(Unit('kilogramu', UnitCategory.KG, UnitLanguage.CS, numbers_validity_decimal, [], False, None))
-units.add_unit(Unit('kila', UnitCategory.KG, UnitLanguage.CS, numbers_validity_2_3_4, [], False, None))
-units.add_unit(Unit('kilo', UnitCategory.KG, UnitLanguage.CS, [(None, -4), -1, 1, (4, None)], [], False, None))
-units.add_unit(Unit('kil', UnitCategory.KG, UnitLanguage.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('kg', UnitCategory.KG, Languages.CS, None, [], True, None))
+units.add_unit(Unit('kilogram', UnitCategory.KG, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('kilogramy', UnitCategory.KG, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('kilogramů', UnitCategory.KG, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('kilogramu', UnitCategory.KG, Languages.CS, numbers_validity_decimal, [], False, None))
+units.add_unit(Unit('kila', UnitCategory.KG, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('kilo', UnitCategory.KG, Languages.CS, [(None, -4), -1, 1, (4, None)], [], False, None))
+units.add_unit(Unit('kil', UnitCategory.KG, Languages.CS, numbers_validity_more_than_5, [], False, None))
 
-units.add_unit(Unit('kg', UnitCategory.KG, UnitLanguage.EN, None, [], True, None))
-units.add_unit(Unit('kilograms', UnitCategory.KG, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
-units.add_unit(Unit('kilogram', UnitCategory.KG, UnitLanguage.EN, numbers_validity_ones, [], False, None))
-units.add_unit(Unit('kilos', UnitCategory.KG, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('kg', UnitCategory.KG, Languages.EN, None, [], True, None))
+units.add_unit(Unit('kilograms', UnitCategory.KG, Languages.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('kilogram', UnitCategory.KG, Languages.EN, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('kilos', UnitCategory.KG, Languages.EN, numbers_validity_not_ones, [], False, None))
 
 # IMPERIAL
-units.add_unit(Unit('pounds', UnitCategory.LB, UnitLanguage.EN, numbers_validity_not_ones, [], False, None))
+units.add_unit(Unit('pounds', UnitCategory.LB, Languages.EN, numbers_validity_not_ones, [], False, None))
 
 """
 units = {
@@ -361,7 +356,7 @@ if __name__ == "__main__":
 
         
         for language, language_values in category_values.items():
-            language_parsed = UnitLanguage.CS if language == 'cs' else UnitLanguage.EN
+            language_parsed = Languages.CS if language == 'cs' else Languages.EN
 
             for unit in language_values:
                 abbrevation = True if len(unit) <= 2 else False
