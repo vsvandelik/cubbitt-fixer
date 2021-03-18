@@ -112,16 +112,16 @@ class NumberFixer:
 
             # same number, different unit
             elif number == tr_number and unit.category != tr_unit.category:
-                #suitable_unit = units.get_correct_unit(self.target_lang, number, unit, tr_unit)
-                #return translated_text.replace(tr_unit.word, suitable_unit.word)
-
+                suitable_unit = units.get_correct_unit(self.target_lang, number, unit, tr_unit)
+                return translated_text.replace(tr_unit.word, suitable_unit.word)
+                """
                 converted_number, new_unit = units.convert_number(self.target_lang, UnitsSystem.Imperial, number, unit, tr_unit)
                 if isinstance(number, int):
                     converted_number = round(converted_number)
                 else:
                     converted_number = round(converted_number, 2)
                 return translated_text.replace(translated_part, f"{converted_number} {new_unit.word}")
-
+                """
             # different number, same unit
             elif number != tr_number and unit.category == tr_unit.category:
 

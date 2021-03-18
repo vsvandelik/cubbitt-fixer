@@ -1,0 +1,102 @@
+import sys
+from os import listdir
+from os.path import isfile, join
+
+from tabulate import tabulate
+
+from fixer import *
+
+devset_languages = ["cs-en", "en-cs"]
+
+
+class Arguments:
+
+    def __init__(self, source_lang: str, target_lang: str):
+        self.recalculate = False
+        self.approximately = False
+        self.source_lang = source_lang
+        self.target_lang = target_lang
+
+
+def report_result(data):
+    print(tabulate(data, headers=["File", "Accuracy", "Precision", "Recall"]))
+
+
+def process_sentences_in_file(folder_path: str, filename: str, fixer_instance: Fixer, report_file):
+    true_positive = 0  # correctly fixed sentence
+    true_negative = 0  # not change correct sentence
+    false_positive = 0  # wrongly fixed sentence
+    false_negative = 0  # change correct sentence
+
+    with open(join(folder_path, filename)) as input_file:
+        for original_sentence in input_file:
+            # original_sentence = input_file.readline()
+            translated_sentence = input_file.readline()
+            correct_sentence = input_file.readline()
+            input_file.readline()  # remove space
+
+            result_sentence = None
+
+            # Check fix broken sentence
+            result = fixer_instance.fix(original_sentence, translated_sentence)
+            if result is True:
+                result_sentence = translated_sentence
+            elif result:
+                result_sentence = result
+
+            if result == correct_sentence:
+                true_positive += 1
+            else:
+                false_positive += 1
+                report_file.writelines([original_sentence, translated_sentence, result_sentence, correct_sentence, '\n'])
+
+            # Check leave correct sentence
+            result = fixer_instance.fix(original_sentence, correct_sentence)
+            if result is True:
+                result_sentence = correct_sentence
+                true_negative += 1
+            elif result:
+                false_negative += 1
+                report_file.writelines([original_sentence, correct_sentence, result, correct_sentence, '\n'])
+
+    return true_positive, true_negative, false_positive, false_negative
+
+
+def run_test(folder_name: str, report_file):
+    devset_files = [file for file in listdir(folder_name) if isfile(join(folder_name, file)) and file != "README.md"]
+
+    languages = folder_name.split("-")
+    fixer_instance = Fixer(Arguments(languages[0], languages[1]))
+
+    results = []
+    true_positive, true_negative, false_positive, false_negative = 0, 0, 0, 0
+
+    for devset_file in devset_files:
+        report_file.write(devset_file + "\n")
+        tp, tn, fp, fn = process_sentences_in_file(folder_name, devset_file, fixer_instance, report_file)
+        accuracy = (tp + tn) / (tp + tn + fp + fn)
+        precision = tp / (tp + fp)
+        recall = tp / (tp + fn)
+        results.append([devset_file, accuracy, precision, recall])
+        true_positive += tp
+        true_negative += tn
+        false_positive += fp
+        false_negative += fn
+
+    accuracy = (true_positive + true_negative) / (true_positive + true_negative + false_positive + false_negative)
+    precision = true_positive / (true_positive + false_positive)
+    recall = true_positive / (true_positive + false_negative)
+    results.append(["SUMMARY", accuracy, precision, recall])
+    report_result(results)
+
+
+if __name__ == "__main__":
+    sys.argv.pop(0)  # remove program name
+
+    language_direction = [sys.argv.pop(0)] if len(sys.argv) > 0 else devset_languages
+    output_file = sys.argv.pop(0) if len(sys.argv) > 0 else "test_report.txt"
+
+    with open(output_file, "w") as report_file:
+        for direction in language_direction:
+            print(direction, ":", sep="")
+            run_test(direction, report_file)
