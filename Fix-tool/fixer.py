@@ -56,8 +56,8 @@ class NumberFixer:
         self.target_lang = target_lang
 
         # preparing regex patterns based on supported units
-        self.number_patter_source = re.compile(rf"(\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(source_lang)})\b)")
-        self.number_patter_target = re.compile(rf"(\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(target_lang)})\b)")
+        self.number_patter_source = re.compile(rf"(\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(source_lang)})\b|\d+\'\d+\")")
+        self.number_patter_target = re.compile(rf"(\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(target_lang)})\b|\d+\'\d+\")")
 
     def fix_numbers_problems(self, original_text: str, translated_text: str) -> Optional[Union[str, bool]]:
         """Fix numbers problems in given sentence based on original text and translated text.
@@ -103,6 +103,9 @@ class NumberFixer:
         # find all number-unit pairs in translated text
         translated_parts = re.findall(self.number_patter_target, translated_text)
 
+        # uses when trying to decide where to replace wrong translation for the correct one
+        best_part_fit = None
+
         for translated_part in translated_parts:
             tr_number, tr_unit = self.__split_number_unit(translated_part, self.target_lang)
 
@@ -130,9 +133,14 @@ class NumberFixer:
                 if problem_with_separator:
                     return problem_with_separator
 
+                best_part_fit = translated_part
+
             # different number, different unit
-            else:
-                pass
+            elif not best_part_fit:
+                best_part_fit = translated_part
+
+        if best_part_fit:
+            return translated_text.replace(best_part_fit, f"{number} {units.get_correct_unit(self.target_lang, number, unit).word}")
 
         return False
 
@@ -209,6 +217,9 @@ class NumberFixer:
         if not custom_separator:
             custom_separator = language.decimal_separator
 
+        if '"' in text or "'" in text:
+            return NumberFixer.__convert_text_to_inches(text), units.get_unit_by_word('inch', language)
+
         # fix of situation: "Back in 1892, 250 kilometres"
         multiple_sentences_split = text.split(', ')
         if len(multiple_sentences_split) > 1:
@@ -234,6 +245,20 @@ class NumberFixer:
         unit = units.get_unit_by_word(unit, language)
 
         return number, unit
+
+    @staticmethod
+    def __convert_text_to_inches(text: str):
+        feet = 0
+        feet_idx_end = None
+        inches = 0
+        for idx, l in enumerate(text):
+            if l == "'":
+                feet = int(text[:idx])
+                feet_idx_end = idx
+            elif l == '"':
+                inches = int(text[feet_idx_end + 1:idx])
+
+        return inches + 12 * feet
 
     @staticmethod
     def __get_string_number(text: str) -> str:
