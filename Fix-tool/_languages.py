@@ -26,3 +26,7 @@ class Languages:
             return Languages.EN
         else:
             raise Exception("wrong language")
+
+    @staticmethod
+    def get_languages_list():
+        return Languages.CS, Languages.EN

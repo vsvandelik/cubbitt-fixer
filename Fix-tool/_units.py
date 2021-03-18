@@ -10,6 +10,11 @@ class UnitsSystem(Enum):
     USCustomary = 2
 
 
+class UnitDialect(Enum):
+    BrE = 0  # British english
+    AmE = 1  # American english
+
+
 class UnitCategory:
 
     def __init__(self, system: List[UnitsSystem], base, base_coefficient: Optional[float], *, conversion=None):
@@ -19,28 +24,105 @@ class UnitCategory:
         self.conversion = conversion
 
 
+class UnitsConvertors:
+
+    @staticmethod
+    def get_best_unit_for_converted_number(number: Union[int, float], category: UnitCategory, language: Language, original_unit, translated_unit):
+        best_number, best_category = number, category
+
+        for category in units_categories[category]:
+
+            # there is no unit for given category
+            if len(units.get_list_units_by_category_language()[language][category]) == 0:
+                continue
+
+            category_number = number / category.base_coefficient
+            if best_number < 0 or (1 < category_number < best_number):
+                best_number = category_number
+                best_category = category
+
+        best_unit = units.get_correct_unit(language, best_number, original_unit, translated_unit, best_category)
+
+        return best_number, best_unit
+
+    @staticmethod
+    def length_convertor(original_number: Union[int, float], original_category: UnitCategory, target_system: UnitsSystem):
+        if UnitsSystem.SI in original_category.system:
+            target_number = original_number / 0.3048
+            target_category = UnitCategories.FT
+        else:
+            target_number = original_number * 0.3048
+            target_category = UnitCategories.M
+
+        return target_number, target_category
+
+    @staticmethod
+    def weight_convertor(original_number: Union[int, float], original_category: UnitCategory, target_system: UnitsSystem):
+        if UnitsSystem.SI in original_category.system:
+            target_number = original_number / 453.59237
+            target_category = UnitCategories.LB
+        else:
+            target_number = original_number * 453.59237
+            target_category = UnitCategories.G
+
+        return target_number, target_category
+
+    @staticmethod
+    def area_convertor(original_number: Union[int, float], original_category: UnitCategory, target_system: UnitsSystem):
+        if UnitsSystem.SI in original_category.system:
+            target_number = original_number * 10.764
+            target_category = UnitCategories.FT2
+        else:
+            target_number = original_number / 10.764
+            target_category = UnitCategories.M2
+
+        return target_number, target_category
+
+
 class UnitCategories:
     MS = UnitCategory([UnitsSystem.SI], None, None)
     KMH = UnitCategory([UnitsSystem.SI], MS, 1000 / 3600)
-    M2 = UnitCategory([UnitsSystem.SI], None, None)
+    M2 = UnitCategory([UnitsSystem.SI], None, None, conversion=UnitsConvertors.area_convertor)
     KM2 = UnitCategory([UnitsSystem.SI], M2, 1000000)
     M3 = UnitCategory([UnitsSystem.SI], None, None)
-    M = UnitCategory([UnitsSystem.SI], None, None)
+    M = UnitCategory([UnitsSystem.SI], None, None, conversion=UnitsConvertors.length_convertor)
     KM = UnitCategory([UnitsSystem.SI], M, 1000)
     DM = UnitCategory([UnitsSystem.SI], M, 0.1)
     CM = UnitCategory([UnitsSystem.SI], M, 0.01)
     MM = UnitCategory([UnitsSystem.SI], M, 0.001)
-    G = UnitCategory([UnitsSystem.SI], None, None)
+    G = UnitCategory([UnitsSystem.SI], None, None, conversion=UnitsConvertors.weight_convertor)
     KG = UnitCategory([UnitsSystem.SI], G, 1000)
-    LB = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    FT = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    LB = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None, conversion=UnitsConvertors.weight_convertor)
+    FT = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None, conversion=UnitsConvertors.length_convertor)
     IN = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT, 1 / 12)
     YD = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT, 3)
     MI = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT, 5280)
-    FT2 = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    MI2 = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT2, 1 / 27878400)
+    FT2 = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None, conversion=UnitsConvertors.area_convertor)
+    MI2 = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT2, 27878400)
 
-    # TODO: Add converting methods
+    @staticmethod
+    def get_categories_by_groups():
+        categories_groups = {}
+
+        all_categories = [a for a in dir(UnitCategories) if not a.startswith('__')]
+        for category in all_categories:
+            category_object = getattr(UnitCategories, category)
+            if callable(category_object):
+                continue
+
+            if category_object.base is None and category_object not in categories_groups.keys():
+                categories_groups[category_object] = []
+            else:
+                if category_object.base not in categories_groups.keys():
+                    categories_groups[category_object.base] = []
+
+                categories_groups[category_object.base].append(category_object)
+
+        return categories_groups
+
+
+units_categories = UnitCategories.get_categories_by_groups()
+
 """
     def __init__(self):
         self.categories_groups = {}
@@ -69,10 +151,6 @@ class UnitCategories:
 
 units_categories = UnitCategories()
 """
-
-class UnitDialect(Enum):
-    BrE = 0  # British english
-    AmE = 1  # American english
 
 
 class Unit:
@@ -128,14 +206,20 @@ class UnitsWrapper:
     def __init__(self):
         self.__units = []
         self.__units_by_languages = {}
+        self.__units_by_language_category = {}
 
     def add_unit(self, unit: Unit):
         self.__units.append(unit)
+        self.__units_by_languages = {}
+        self.__units_by_language_category = None
 
-    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, replacement_for: Unit):
+    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, replacement_for: Unit, strict_category=None):
+        if not strict_category:
+            strict_category = original_unit.category
+
         options_list = []
         for unit in self.__units:
-            if unit.language != language or unit.category != original_unit.category:
+            if unit.language != language or unit.category != strict_category:
                 continue
 
             score = 0
@@ -156,13 +240,35 @@ class UnitsWrapper:
         options_list.sort(key=lambda tup: tup[0], reverse=True)
         return options_list[0][1]
 
-    def get_words_by_category_language(self, category: int, language: Language) -> List[str]:
-        words = []
-        for unit in self.__units:
-            if unit.category == category and unit.language == language:
-                words.append(unit.word)
+    def convert_number(self, target_language: Language, target_unit_system: UnitsSystem, actual_number: Union[int, float], original_unit: Unit, translated_unit: Unit):
+        actual_category = original_unit.category
+        if actual_category.base:
+            actual_number = actual_number * original_unit.category.base_coefficient
+            actual_category = original_unit.category.base
 
-        return words
+        if not actual_category.conversion:
+            return False
+
+        converted_number, converted_category = actual_category.conversion(actual_number, actual_category, target_unit_system)
+        converted_number, converted_unit = UnitsConvertors.get_best_unit_for_converted_number(converted_number, converted_category, target_language, original_unit, translated_unit)
+
+        return converted_number, converted_unit
+
+    def get_list_units_by_category_language(self) -> dict:
+        if self.__units_by_language_category:
+            return self.__units_by_language_category
+
+        self.__units_by_language_category = {}
+        for language in Languages.get_languages_list():
+            self.__units_by_language_category[language] = {}
+
+        for unit in self.__units:
+            if unit.category not in self.__units_by_language_category[unit.language].keys():
+                self.__units_by_language_category[unit.language][unit.category] = []
+
+            self.__units_by_language_category[unit.language][unit.category].append(unit)
+
+        return self.__units_by_language_category
 
     def get_unit_by_word(self, word: str, language: Language) -> Optional[Unit]:
         for unit in self.__units:
@@ -184,6 +290,16 @@ class UnitsWrapper:
                     self.__units_by_languages[language].append(unit)
 
         return self.__units_by_languages[language]
+
+"""
+    def get_words_by_category_language(self, category: int, language: Language) -> List[str]:
+        words = []
+        for unit in self.__units:
+            if unit.category == category and unit.language == language:
+                words.append(unit.word)
+
+        return words
+"""
 
 
 """
@@ -213,7 +329,7 @@ class WeightRecalculator(UnitsRecalculator):
 """
 
 numbers_validity_ones = [-1, 1]
-numbers_validity_not_ones = [(None, -1), (1, None)]
+numbers_validity_not_ones = [(None, -1), (1, None), float]
 numbers_validity_2_3_4 = [-4, -3, -2, 2, 3, 4]
 numbers_validity_more_than_5 = [(None, -4), (4, None)]
 numbers_validity_decimal = [float]
