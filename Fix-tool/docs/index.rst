@@ -16,6 +16,9 @@ Welcome to Lindat translation postprocessor's documentation!
    :undoc-members:
    :private-members:
 
+.. automodule:: alignerapi
+   :members:
+
 
 .. toctree::
    :maxdepth: 2
