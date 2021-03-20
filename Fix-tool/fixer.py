@@ -4,6 +4,7 @@ from typing import Union, Optional, List, Tuple
 
 from _languages import Languages, Language
 from _units import units, Unit, UnitsSystem
+from alignerapi import AlignerApi
 
 Number = Union[int, float]
 
@@ -83,8 +84,23 @@ class NumberFixer:
 
         if len(problems) == 1:
             return self.__fix_single_number(problems[0], original_text, translated_text)
+        elif len(problems) > 1:
+            return False
         else:
-            return None
+            return True
+
+    def __fix_sentence_multiple_units(self, numbers_units_pairs: List[Tuple[bool, Number, Unit]], original_text:str, translated_text:str):
+        if self.source_lang == Languages.CS:
+            word_alignment = AlignerApi.get_alignment(translated_text, original_text)
+        else:
+            word_alignment = AlignerApi.get_alignment(original_text, translated_text)
+
+        for approximately, number, unit in numbers_units_pairs:
+            translated_unit = units.get_units_by_category_language(unit.category, self.target_lang)
+            translated_unit_words = [unit.word for unit in translated_unit]
+            if re.search(rf"{number}[\s-]?(?:{'|'.join(translated_unit_words)})\b", translated_text):
+                continue
+
 
     def __fix_single_number(self, problem_part: Tuple[bool, Number, Unit], original_text: str, translated_text: str) -> Optional[Union[str, bool]]:
         """Fix sentence with single number problem.
@@ -117,14 +133,14 @@ class NumberFixer:
             elif number == tr_number and unit.category != tr_unit.category:
                 suitable_unit = units.get_correct_unit(self.target_lang, number, unit, tr_unit)
                 return translated_text.replace(tr_unit.word, suitable_unit.word)
-                """
+                '''
                 converted_number, new_unit = units.convert_number(self.target_lang, UnitsSystem.Imperial, number, unit, tr_unit)
                 if isinstance(number, int):
                     converted_number = round(converted_number)
                 else:
                     converted_number = round(converted_number, 2)
                 return translated_text.replace(translated_part, f"{converted_number} {new_unit.word}")
-                """
+                '''
             # different number, same unit
             elif number != tr_number and unit.category == tr_unit.category:
 

@@ -12,7 +12,7 @@ parser.add_argument("--recalculate", action="store_true", default=False,
                     help="Whenever the numbers should be recalculated to new units")
 
 parser.add_argument("--limit", default=100000, type=int, help="Count of sentences to be checked")
-parser.add_argument("--offset", default=0, help="Offset of sentences to be checked")
+parser.add_argument("--offset", default=0, type=int, help="Offset of sentences to be checked")
 
 
 def main(args):

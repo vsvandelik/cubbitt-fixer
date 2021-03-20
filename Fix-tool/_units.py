@@ -270,6 +270,12 @@ class UnitsWrapper:
 
         return self.__units_by_language_category
 
+    def get_units_by_category_language(self, category: UnitCategory, language: Language) -> list:
+        if not self.__units_by_language_category:
+            self.get_list_units_by_category_language()
+
+        return self.__units_by_language_category[language][category]
+
     def get_unit_by_word(self, word: str, language: Language) -> Optional[Unit]:
         for unit in self.__units:
             if unit.language == language and unit.word == word:

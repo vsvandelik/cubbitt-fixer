@@ -1,0 +1,23 @@
+Provozní délka: 4,67 km
+Running length: 4,67 km
+Running length: 4.67 km
+
+max. výška hladiny 354,1 m n. m.
+max. level height 354,1 m above the sea level.
+max. level height 354.1 m above the sea level.
+
+aktuální výška 347,5 m n. m
+Current height 347,5 m above sea level
+Current height 347.5 m above sea level
+
+Suchou váhu udává výrobce 179,5 kg.
+The dry weight is given by the manufacturer at 179,5 kg.
+The dry weight is given by the manufacturer at 179.5 kg.
+
+Vnější část pláště je z žulového zdiva v tloušťce 0,5 metru, izolační vrstva je asfaltová a vnitřek je z betonových tvárnic v tloušťce cca 0,3 metru.
+The outer part of the casing is granite masonry 0,5 metres thick, the insulating layer is asphalt and the interior is concrete blocks about 0,3 metres thick.
+The outer part of the casing is granite masonry 0.5 metres thick, the insulating layer is asphalt and the interior is concrete blocks about 0.3 metres thick.
+
+Poranění tohoto rozsahu vznikne při dopadu na zraněnou dolní končetinu z malé výšky, kdy lze akceptovat výšku maximálně 3,5 metru.
+Injuries of this magnitude occur from a low altitude when the injured lower limb is impacted, where a maximum height of 3,5 metres can be accepted.
+Injuries of this magnitude occur from a low altitude when the injured lower limb is impacted, where a maximum height of 3.5 metres can be accepted.
