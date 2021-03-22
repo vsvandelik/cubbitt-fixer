@@ -1,5 +1,8 @@
 import argparse
+
 from fixer import Fixer
+from fixer._statistics import StatisticsMarks
+from tabulate import tabulate
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file", help="Name of file to be checked")
@@ -17,7 +20,7 @@ parser.add_argument("--offset", default=0, type=int, help="Offset of sentences t
 
 def main(args):
     fixer = Fixer(args)
-    results = []
+    statistics = {mark.value: 0 for mark in StatisticsMarks}
 
     with open(args.file, "r", encoding="utf8") as input_file:
         for _ in range(args.offset):  # skipping the offset
@@ -41,12 +44,18 @@ def main(args):
             left = left.strip()
             right = right.strip()
 
-            repaired_sentence = fixer.fix(left, right)
+            repaired_sentence, marks = fixer.fix(left, right)
+
+            for mark in marks:
+                statistics[mark.value] += 1
 
             if isinstance(repaired_sentence, str):  # reporting repairs
                 print(left, right, repaired_sentence, sep='\n', end='\n\n')
             elif repaired_sentence is False:
                 print(left, right, "Unfixable sentence", sep='\n', end='\n\n')
+
+    statistics_to_print = [(mark.name, statistics[mark.value]) for mark in StatisticsMarks]
+    print(tabulate(statistics_to_print))
 
 
 if __name__ == "__main__":

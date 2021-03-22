@@ -2,9 +2,10 @@ import argparse
 import re
 from typing import Union, Optional, List, Tuple
 
-from ._languages import Languages, Language
-from ._units import units, Unit, UnitsSystem
 from ._alignerapi import AlignerApi
+from ._languages import Languages, Language
+from ._units import units, Unit
+from ._statistics import StatisticsMarks
 
 Number = Union[int, float]
 
@@ -24,7 +25,7 @@ class Fixer:
             source_lang,
             target_lang)
 
-    def fix(self, original_text: str, translated_text: str) -> Union[str, bool]:
+    def fix(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
         """Function to fix translation of one sentence based on Fixer attributes.
 
         :param original_text: Text in source language for verifying the translation.
@@ -60,7 +61,7 @@ class NumberFixer:
         self.number_patter_source = re.compile(rf"(\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(source_lang)})\b|\d+\'\d+\")")
         self.number_patter_target = re.compile(rf"(\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(target_lang)})\b|\d+\'\d+\")")
 
-    def fix_numbers_problems(self, original_text: str, translated_text: str) -> Optional[Union[str, bool]]:
+    def fix_numbers_problems(self, original_text: str, translated_text: str) -> Tuple[Optional[Union[str, bool]], List]:
         """Fix numbers problems in given sentence based on original text and translated text.
 
         For supported operations looks at class documentation.
@@ -83,26 +84,34 @@ class NumberFixer:
         problems = self.__find_numbers_units(original_text, self.source_lang)
 
         if len(problems) == 1:
-            return self.__fix_single_number(problems[0], original_text, translated_text)
+            fix_result, marks = self.__fix_single_number(problems[0], original_text, translated_text)
+            marks.append(StatisticsMarks.SINGLE_NUMBER_UNIT_SENTENCE)
+            return fix_result, marks
         elif len(problems) > 1:
-            return False
+            return self.__fix_sentence_multiple_units(problems, original_text, translated_text)
         else:
-            return True
+            return True, []
 
-    def __fix_sentence_multiple_units(self, numbers_units_pairs: List[Tuple[bool, Number, Unit]], original_text:str, translated_text:str):
+    def __fix_sentence_multiple_units(self, numbers_units_pairs: List[Tuple[bool, Number, Unit]], original_text: str, translated_text: str):
         if self.source_lang == Languages.CS:
             word_alignment = AlignerApi.get_alignment(translated_text, original_text)
         else:
             word_alignment = AlignerApi.get_alignment(original_text, translated_text)
 
+        problems_count = len(numbers_units_pairs)
+
         for approximately, number, unit in numbers_units_pairs:
-            translated_unit = units.get_units_by_category_language(unit.category, self.target_lang)
-            translated_unit_words = [unit.word for unit in translated_unit]
-            if re.search(rf"{number}[\s-]?(?:{'|'.join(translated_unit_words)})\b", translated_text):
+            single_fix, _ = self.__fix_single_number((approximately, number, unit), original_text, translated_text)
+            if single_fix is True:
+                problems_count -= 1
                 continue
 
+        if problems_count > 0:
+            return False, [StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE]
+        else:
+            return True, [StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE, StatisticsMarks.CORRECT_MULTIPLE_NUMBER_UNIT_SENTENCE]
 
-    def __fix_single_number(self, problem_part: Tuple[bool, Number, Unit], original_text: str, translated_text: str) -> Optional[Union[str, bool]]:
+    def __fix_single_number(self, problem_part: Tuple[bool, Number, Unit], original_text: str, translated_text: str) -> Tuple[Optional[Union[str, bool]],List]:
         """Fix sentence with single number problem.
 
         It searches for matching number in both original and translated text and compares numbers and units.
@@ -116,6 +125,8 @@ class NumberFixer:
 
         (approximately, number, unit) = problem_part
 
+        marks = []
+
         # find all number-unit pairs in translated text
         translated_parts = re.findall(self.number_patter_target, translated_text)
 
@@ -127,12 +138,12 @@ class NumberFixer:
 
             # same number, same unit
             if number == tr_number and unit.category == tr_unit.category:
-                return True
+                return True, [StatisticsMarks.CORRECT_NUMBER_UNIT]
 
             # same number, different unit
             elif number == tr_number and unit.category != tr_unit.category:
                 suitable_unit = units.get_correct_unit(self.target_lang, number, unit, tr_unit)
-                return translated_text.replace(tr_unit.word, suitable_unit.word)
+                return translated_text.replace(tr_unit.word, suitable_unit.word), [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT]
                 '''
                 converted_number, new_unit = units.convert_number(self.target_lang, UnitsSystem.Imperial, number, unit, tr_unit)
                 if isinstance(number, int):
@@ -147,7 +158,7 @@ class NumberFixer:
                 # verifies if the problem is caused by untranslated decimal separator
                 problem_with_separator = self.__fix_wrong_decimal_separator(number, tr_number, translated_part, translated_text)
                 if problem_with_separator:
-                    return problem_with_separator
+                    return problem_with_separator, [StatisticsMarks.DECIMAL_SEPARATOR_PROBLEM]
 
                 best_part_fit = translated_part
 
@@ -156,9 +167,9 @@ class NumberFixer:
                 best_part_fit = translated_part
 
         if best_part_fit:
-            return translated_text.replace(best_part_fit, f"{number} {units.get_correct_unit(self.target_lang, number, unit).word}")
+            return translated_text.replace(best_part_fit, f"{number} {units.get_correct_unit(self.target_lang, number, unit).word}"), []
 
-        return False
+        return False, []
 
     def __find_numbers_units(self, text: str, language: Language) -> List[Tuple[bool, Number, Unit]]:
         """Search in sentence for number-unit parts

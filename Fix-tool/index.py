@@ -25,7 +25,7 @@ if __name__ == "__main__":
     src_text = form.getvalue('source_text')
     tgt_text = form.getvalue('target_text')
 
-    translation = fixer.fix(src_text, tgt_text)
+    translation, _ = fixer.fix(src_text, tgt_text)
 
     # there was no fix or the sentence is unfixable
     if not translation or translation is True:
