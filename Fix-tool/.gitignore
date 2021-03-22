@@ -4,3 +4,4 @@ dev_set/test_report.txt
 docs/_build/
 docs/_static/
 docs/_templates/
+**/.pytest_cache/

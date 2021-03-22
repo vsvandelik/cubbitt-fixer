@@ -2,9 +2,9 @@ import argparse
 import re
 from typing import Union, Optional, List, Tuple
 
-from _languages import Languages, Language
-from _units import units, Unit, UnitsSystem
-from alignerapi import AlignerApi
+from ._languages import Languages, Language
+from ._units import units, Unit, UnitsSystem
+from ._alignerapi import AlignerApi
 
 Number = Union[int, float]
 

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Union, Optional, List
 
-from _languages import Language, Languages
+from ._languages import Language, Languages
 
 
 class UnitsSystem(Enum):

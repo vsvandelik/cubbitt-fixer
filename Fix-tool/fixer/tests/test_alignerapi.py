@@ -1,4 +1,4 @@
-from alignerapi import *
+from fixer._alignerapi import *
 
 
 def test_get_alignment():

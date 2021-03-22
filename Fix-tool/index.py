@@ -28,7 +28,7 @@ if __name__ == "__main__":
     translation = fixer.fix(src_text, tgt_text)
 
     # there was no fix or the sentence is unfixable
-    if not translation:
+    if not translation or translation is True:
         translation = tgt_text
 
     print(translation)
