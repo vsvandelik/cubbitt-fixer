@@ -1,36 +1,123 @@
 \documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[czech]{babel}
+\usepackage[czech,shorthands=off]{babel}
 \usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{csquotes}
+\usepackage{tabularx}
+\usepackage{url}
 \usepackage[left=1.50cm, right=1.50cm, top=1.50cm, bottom=1.50cm]{geometry}
+\usepackage[style=verbose-ibid, backend=bibtex]{biblatex}
+\bibliography{zdroje}
+
+\renewcommand{\theenumi}{\alph{enumi}}
 
 \title{Specifikace ročníkového projektu}
 \author{Vojtěch Švandelík}
 \begin{document}
 	\maketitle
 	
-	V následujícím dokumentu je uvedena specifikace ročníkového projektu na \textit{Matematicko-fyzikální fakultě Univerzity Karlovy}. Vedoucím ročníkového projektu je Mgr. Martin Popel, Ph.D. z Ústavu formální a~aplikované lingvistiky.
+	V~následujícím dokumentu je uvedena specifikace ročníkového projektu na \textit{Matematicko-fyzikální fakultě Univerzity Karlovy}. Vedoucím ročníkového projektu je Mgr. Martin Popel, Ph.D. z~Ústavu formální a~aplikované lingvistiky.
 	
 	\section{Cíl projektu}
-	Obsahem ročníkového projektu je identifikovat chyby v automatickém překladu neuronového překladače \textit{CUBBITT} a~navrhnout způsoby jejich řešení.
-	
-	\section{Popis fází}
-	\subsection{Identifikace chyb}
-	Při hledání chyb se bude vycházet z korpusu \textit{CzEng 2.0}\footnote{http://ufal.mff.cuni.cz/czeng}. Tento obsahuje české i anglické texty přeložené prostřednictvím výše zmíněného překladače do opačného jazyka. V přeložených textech proběhne poloautomatické filtrování, které se pokusí potvrdit již dříve identifikované překladové problémy a rovněž se zaměří na hledání nových.
-	
-	Prozatím známé (a vcelku významné) překladové chyby jsou nevhodné překládání vlastních jmen osob a překlad jednotek u~čísel, kdy hodnota ztrácí faktický význam.
-	
-	\subsection{Hledání řešení}
-	Prvotní fází napravování překladových chyb bude vkládání do textu speciální unicode znaky. Následně se bude zkoumat, zda-li překladač obalené části vět bude či nebude překládat. Dle získaných výsledků budou následovat další kroky. Jedním z nich by mohlo být přetrénování testovacích dat s ohledem na zamezení překládání speciálně označených tokenů.
-	
-	\subsection{Vyhodnocování výsledků}
-	Úspěšnost vylepšení překladu bude vyhodnocována pomocí dostupných nástrojů -- např. metrika Bleu.
-	
+	Obsahem ročníkového projektu je identifikovat chyby v~automatickém překladu neuronového překladače \textit{LINDAT Translation}\footnote{https://lindat.mff.cuni.cz/services/translation/} a~navrhnout způsoby jejich řešení. Konkrétně se bude jednat o~překlad mezi českým a anglickým jazykem v~obou směrech.
+		
 	\section{Výstup projektu}
-	Výstupem ročníkového projektu by měla být rozvaha nad nalezenými překladovými chybami, společně s rešerší týkající se jejich oprav.
+	Výstupem ročníkového projektu bude balíček v~jazyce Python, který bude možné volat na jednotlivé již přeložené věty a který bude vracet jejich \uv{opravený} překlad.
 	
-	V rámci implementační části by měl vzniknout základ evaluace výsledků a především by mělo dojít k využití alespoň některých návrhů řešení překladových chyb.
+	K~tomuto balíčku vzniknou dva nástroje pro jeho otestování:
 	
-	Výstupy by měly posloužit jako podklady pro psaní bakalářské práce.
+	\begin{itemize}
+		\item \verb|CLI| program v~jazyce Python, který umožní spustit opravu vět ze standardního vstupu a opravené věty bude vypisovat na standardní výstup (tento bude použit pro opravu trénovacích dat překladače LINDAT);
+		\item \verb|WSGI| webová aplikace využívající standardní webové technologie na straně frontendu a Python na straně backendu pro uživatelsky přívětivé otestování.
+	\end{itemize}
+	
+	Výstupy ročníkového projektu poslouží jako podklady pro tvorbu bakalářské práce.
+	
+	\section{Opravované jevy}
+	Primárním cílem oprav budou číselné údaje s~běžně užívanými jednotkami. Při překladu totiž u~některých vět dochází k~některým z~následujících jevů:
+	
+	\begin{enumerate}
+		\item překladač ponechá původní číselný údaj ale použije jinou jednotku;
+		\item překladač \uv{přeloží} i číselný údaj i jednotku;
+		\item překladač nechá beze změny původní číselný údaj obsahující oddělovač tisíců či desetinných čísel, čímž se ztratí vypovídající hodnota.
+	\end{enumerate}
+
+	\begin{table}[htb]
+		\caption{Ukázka základních překladových chyb, jejichž opravu bude vytvořený nástroj podporovat.}
+		\begin{tabularx}{\textwidth}{XXX}
+			\multicolumn{1}{c}{\textbf{Zdrojová věta}} & \multicolumn{1}{c}{\textbf{Přeložená věta}}              & \multicolumn{1}{c}{\textbf{Oprava}}                                \\ \hline \hline
+			Veronika Stýblová vážila o~20~kilo víc.    & Veronica Bean weighed 20~pounds more.                    & Veronica Bean weighed 20~kilograms more.                 		   \\ \hline
+			Je vysoký pouhých 190~cm.                  & He's only six feet tall.                                 & He's only 190~cm tall.\textit{*}                                   \\ \hline
+			Suchou váhu udává výrobce 179,5~kg.        & The dry weight is given by the manufacturer at 179,5~kg. & The dry weight is given by the manufacturer at 179.5~kg.\textit{**}  
+		\end{tabularx}
+	
+		\vspace{1em}
+		\textit{* Překladač se pokusil číselnou hodnotu přepočítat, ale výsledný číselný údaj v~kontextu věty ztratil část informace. Původních 190 centimetrů se totiž přeložilo jako šest stop, což odpovídá 183 centimetrům.}   
+		
+		\textit{** Číselná hodnota 179 a půl kilogramu byla překladačem ponecháním desetinné čárky přeložena jako 179 tisíc kilogramů.}  
+	\end{table}
+
+	Oprava chyb se bude týkat nejběžněji používaných fyzikálních jednotek, tj. jednotky délky, hmotnosti, teploty, rychlosti a rovněž mezinárodních měn (CZK, USD, GBP, EUR).
+
+	\section{Použité metody opravy chyb}
+	V~rámci ročníkového projektu budou chyby nalézány a opravovány prostřednictvím nástroje, který vznikne v~programovacím jazyce Python (verze 3.8), který tak bude činit na základě jazykových heuristik. Tyto budou zpřesňovány pomocí externích nástrojů -- především nástroje pro word-alignment. Ten bude nápomocen při opravování vět, kde se nachází více číselných údajů s~jednotkami a tedy umožní identifikovat k~sobě patřící dvojice. Jako součást nástroje vznikne rovněž vestavěný word-aligner, který bude využívat naivní implementaci, kdy k~sobě přiřadí dvojice čísel a jednotek dle pořadí ve větě. 
+	
+	Pro vývoj nástroje, analyzování překladových chyb a měření úspěšnosti bude využit česko-anglický paralelní korpus \textit{CzEng 2.0}\autocite{kocmi2020announcing}, který byl sestaven na Ústavu formální a aplikované lingvistiky MFF UK. Tento kromě autentických trénovacích dat, využívaných pro trénovaní modelu překladače, obsahuje již syntetická data přeložená překladačem. Tyto jsou vhodná pro odhalování překladových chyb.
+		
+	\begin{table}[htb]
+		\caption{Statistika počtu pro nástroj zajímavých vět ve vzorku $100\,000$ vět z~syntetických česko-anglických dat korpusu \textit{CzEng 2.0}.}
+		\label{tab:stats}
+		\begin{tabularx}{\textwidth}{Xccc}
+			\multicolumn{1}{c}{\textbf{}} & \multicolumn{3}{c}{\textbf{Počet}} \\
+			\multicolumn{1}{c}{\textbf{Typ věty}} & \textbf{Fyzikální jednotky} & \textbf{Měny} & \textbf{Celkově} \\ \hline \hline
+			věta s~alespoň jedním číslem s~jednotkou & 603 & 591 & 1194 \\
+			vět, kde byly zachovány všechna čísla s~jednotkami & 565 & 438 & 1003 \\
+			věta, kde překladač nezachoval alespoň jedno číslo & 0 & 3 & 3 \\
+			věta, kde překladač nezachoval alespoň jednu jednotku & 16 & 133 & 149 \\
+			věta, kde byl nevhodně přeložen oddělovač tisíců / desetinných čísel u~čísla s~jednotkou & 7 & 4 & 11
+		\end{tabularx}
+	\end{table}
+
+	Pro metody opravy chyb je rovněž podstatné, zdali je ve větě uveden pouze jeden číselný údaj s~jednotkou, anebo zdali jich je více. V~případě první varianty je totiž oprava chyb typicky zjednodušena (není třeba word-alignment).
+	
+	\begin{table}[htb]
+		\caption{Statistika počtu čísel s~jednotkami ve větách ve vzorku $100\,000$ vět z~syntetických dat česko-anglických korpusu \textit{CzEng 2.0}.}
+		\begin{tabularx}{\textwidth}{Xc}
+			\multicolumn{1}{c}{\textbf{Typ věty}} & \textbf{Počet} \\ \hline \hline
+			věta s~jedním číslem s~jednotkou & 1009 \\
+			věta s~více čísly s~jednotkami & 185
+		\end{tabularx}
+	\end{table}
+	
+	\section{Parametrizovatelnost nástroje}
+	Funkci nástroje bude možné ovlivnit prostřednictvím několika parametrů. Tyto budou založeny hlavně na různých režimech opravy chyb v~překladech. 
+	
+	Nástroj bude mít dva hlavní režimy. V~prvním režimu, který bude využit pro trénování modelu překladače \textit{LINDAT Translation}, bude nástroj hledat překladové chyby a tyto se pokusí opravit (provede se co nejmenší možná změna tak, aby se chyba odstranila).
+	
+	V~druhém režimu půjde o~především webový nástroj, který umožní uživatelům upravit výstup překladače tak, aby využíval jednotky zvolené uživatelem.
+	
+	Oba režimy fungování budou ovlivnitelné dvěma číselnými konstantami:
+	
+	\begin{itemize}
+		\item míra tolerance odchylky překladu u~číselných údajů u~všech překladových chyb;
+		\item míra tolerance odchylky překladu u~číselných údajů, které budou považovány za přibližné (tj. před číselnou hodnotou se bude vyskytovat typu \uv{asi}, \uv{přibližně}, atp.).
+	\end{itemize} 
+	
+	Dalšími parametry, které bude možné změnit v~konfiguraci nástroje, bude použití online word-aligneru a rovněž režim získání kurzu pro přepočet měn (bude možné použít fixní kurz či získat aktuální kurz z~webového portálu \textit{České národní banky}).
+	
+	\section{Technické parametry}
+	Nástroj bude vyvíjen v~jazyce Python ve verzi 3.8. Budou využity standardní knihovny. K~nástroji vznikne technická i uživatelská dokumentace. Technická dokumentace bude především generována ze zdrojových kódů prostřednictvím nástroje \textit{Sphinx} a bude doplněna popisem architektury a zvolených technologií. K~nejdůležitějším částem aplikace vzniknou unit-testy ověřující správnou funkci.
+	
+	S~externím nástrojem -- word-alignerem bude aplikace komunikovat prostřednictvím standardního komunikačního protokolu \textit{HTTP}.
+	
+	Aplikace bude využívat verzovací systém \textit{Git}.
+
+	\section{Ověřování funkčnosti aplikace}
+	Kromě výše zmíněných unit-testů vznikne tzv. \uv{dev-set}, tj. množina ručně vybraných vět s~jejich správnými překlady. Na této množině vět bude aplikace spouštěna a bude měřena její úspěšnost prostřednictvím běžně užívaných statistických nástrojů (především úspěšnost počtu správně opravených vět).
+	
+	\section{Licence}
+	Aplikace bude publikována prostřednictvím služby \textit{GitHub}\footnote{\url{https://github.com/vsvandelik/lindat-translation-postprocessor}} pod licencí MIT.
+	
 \end{document}
