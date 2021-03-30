@@ -33,7 +33,10 @@ class Fixer:
         :return: repaired text if sentence can be fixed, True if sentence is correct, False if sentence cannot be repaired
         :rtype: str or bool
         """
-        repair = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
+        try:
+            repair = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
+        except Exception:
+            return False, []
 
         return repair
 
@@ -58,8 +61,10 @@ class NumberFixer:
         self.target_lang = target_lang
 
         # preparing regex patterns based on supported units
-        self.number_patter_source = re.compile(rf"(\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(source_lang)})\b|\d+\'\d+\")")
-        self.number_patter_target = re.compile(rf"(\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(target_lang)})\b|\d+\'\d+\")")
+        self.number_patter_source = re.compile(
+            rf"((?:{units.get_regex_units_for_language_before_numbers(source_lang)})\s?\d[\d .,]*|\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(source_lang)})\b|\d+\'\d+\")")
+        self.number_patter_target = re.compile(
+            rf"((?:{units.get_regex_units_for_language_before_numbers(target_lang)})\s?\d[\d .,]*|\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(target_lang)})\b|\d+\'\d+\")")
 
     def fix_numbers_problems(self, original_text: str, translated_text: str) -> Tuple[Optional[Union[str, bool]], List]:
         """Fix numbers problems in given sentence based on original text and translated text.
@@ -100,14 +105,17 @@ class NumberFixer:
 
         problems_count = len(numbers_units_pairs)
 
+        marks = [StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE]
+
         for approximately, number, unit in numbers_units_pairs:
-            single_fix, _ = self.__fix_single_number((approximately, number, unit), original_text, translated_text)
+            single_fix, marks_individual = self.__fix_single_number((approximately, number, unit), original_text, translated_text)
             if single_fix is True:
                 problems_count -= 1
                 continue
+            marks += marks_individual
 
         if problems_count > 0:
-            return False, [StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE]
+            return False, list(dict.fromkeys(marks))
         else:
             return True, [StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE, StatisticsMarks.CORRECT_MULTIPLE_NUMBER_UNIT_SENTENCE]
 
@@ -160,6 +168,7 @@ class NumberFixer:
                 if problem_with_separator:
                     return problem_with_separator, [StatisticsMarks.DECIMAL_SEPARATOR_PROBLEM]
 
+                marks = [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT]
                 best_part_fit = translated_part
 
             # different number, different unit
@@ -167,7 +176,7 @@ class NumberFixer:
                 best_part_fit = translated_part
 
         if best_part_fit:
-            return translated_text.replace(best_part_fit, f"{number} {units.get_correct_unit(self.target_lang, number, unit).word}"), []
+            return translated_text.replace(best_part_fit, f"{number} {units.get_correct_unit(self.target_lang, number, unit).word}"), marks
 
         return False, []
 
@@ -248,21 +257,34 @@ class NumberFixer:
             return NumberFixer.__convert_text_to_inches(text), units.get_unit_by_word('inch', language)
 
         # fix of situation: "Back in 1892, 250 kilometres"
-        multiple_sentences_split = text.split(', ')
+        multiple_sentences_split = text.strip(' .,- ').split(', ')
         if len(multiple_sentences_split) > 1:
             text = multiple_sentences_split[-1]
 
         number_string = []
 
-        for idx, ch in enumerate(text):
-            if ch.isdigit():
-                number_string.append(ch)
-            elif ch == custom_separator:
-                number_string.append('.')
-                decimal = True
-            elif ch.isalpha():
-                unit = text[idx:].strip(' -')
-                break
+        if text[0].isdigit():
+            for idx, ch in enumerate(text):
+                if ch.isdigit():
+                    number_string.append(ch)
+                elif ch == custom_separator:
+                    number_string.append('.')
+                    decimal = True
+                elif ch.isalpha():
+                    unit = text[idx:].strip(' -')
+                    break
+        else:
+            unit_complete = False
+            for idx, ch in enumerate(text):
+                if ch.isdigit() and unit_complete is False:
+                    unit = text[:idx].strip(' -')
+                    unit_complete = True
+                    number_string.append(ch)
+                elif ch.isdigit():
+                    number_string.append(ch)
+                elif ch == custom_separator and idx < len(text) - 1:
+                    number_string.append('.')
+                    decimal = True
 
         if decimal:
             number = float("".join(number_string))
@@ -270,6 +292,8 @@ class NumberFixer:
             number = int("".join(number_string))
 
         unit = units.get_unit_by_word(unit, language)
+        if unit is None:
+            pass
 
         return number, unit
 

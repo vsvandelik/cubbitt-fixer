@@ -99,6 +99,12 @@ class UnitCategories:
     MI = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT, 5280)
     FT2 = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None, conversion=UnitsConvertors.area_convertor)
     MI2 = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT2, 27878400)
+    CZK = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    USD = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    GBP = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    EUR = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    C = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    F = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
 
     @staticmethod
     def get_categories_by_groups():
@@ -162,13 +168,15 @@ class Unit:
                  numbers_validity: Optional[List[Union[int, tuple, object]]],
                  recalculators: list,
                  abbreviation: bool,
-                 dialect: Optional[UnitDialect]):
+                 dialect: Optional[UnitDialect],
+                 before_number: bool=False):
         self.word = word
         self.category = category
         self.language = language
         self.numbers_validity = numbers_validity
         self.recalculators = recalculators
         self.abbreviation = abbreviation
+        self.before_number = before_number
 
         if dialect:
             self.dialect = dialect
@@ -286,7 +294,18 @@ class UnitsWrapper:
     def get_regex_units_for_language(self, language: Language) -> str:
         units_for_language = self.get_all_units_for_language(language)
 
-        return '|'.join([unit.word for unit in units_for_language])
+        pattern = '|'.join([unit.word for unit in units_for_language])
+
+        return pattern.replace('$', '\$')
+
+    def get_regex_units_for_language_before_numbers(self, language: Language) -> str:
+        units_for_language = self.get_all_units_for_language(language)
+
+        pattern ='|'.join([unit.word for unit in units_for_language if unit.before_number is True])
+
+        pattern = '<!>' if pattern == '' else pattern
+
+        return pattern.replace('$', '\$')
 
     def get_all_units_for_language(self, language: Language) -> List[Unit]:
         if language not in self.__units_by_languages.keys():
@@ -341,6 +360,7 @@ numbers_validity_more_than_5 = [(None, -4), (4, None)]
 numbers_validity_decimal = [float]
 
 units = UnitsWrapper()
+
 
 units.add_unit(Unit('km/h', UnitCategories.KMH, Languages.CS, None, [], True, None))
 units.add_unit(Unit('kph', UnitCategories.KMH, Languages.CS, None, [], True, None))
@@ -500,8 +520,85 @@ units.add_unit(Unit('kilograms', UnitCategories.KG, Languages.EN, numbers_validi
 units.add_unit(Unit('kilogram', UnitCategories.KG, Languages.EN, numbers_validity_ones, [], False, None))
 units.add_unit(Unit('kilos', UnitCategories.KG, Languages.EN, numbers_validity_not_ones, [], False, None))
 
+units.add_unit(Unit('kč', UnitCategories.CZK, Languages.CS, None, [], True, None))
+units.add_unit(Unit(',-kč', UnitCategories.CZK, Languages.CS, None, [], True, None))
+units.add_unit(Unit('Kč', UnitCategories.CZK, Languages.CS, None, [], True, None))
+units.add_unit(Unit(',-Kč', UnitCategories.CZK, Languages.CS, None, [], True, None))
+units.add_unit(Unit('korun českých', UnitCategories.CZK, Languages.CS, numbers_validity_more_than_5, [], False, None))
+units.add_unit(Unit('koruna česká', UnitCategories.CZK, Languages.CS, numbers_validity_ones, [], False, None))
+units.add_unit(Unit('koruny české', UnitCategories.CZK, Languages.CS, numbers_validity_2_3_4, [], False, None))
+units.add_unit(Unit('korun', UnitCategories.CZK, Languages.CS, numbers_validity_2_3_4, [], False, None))
+
+units.add_unit(Unit('CZK', UnitCategories.CZK, Languages.EN, None, [], True, None, True))
+units.add_unit(Unit('crowns', UnitCategories.CZK, Languages.EN, None, [], False, None))
+units.add_unit(Unit('kroner', UnitCategories.CZK, Languages.EN, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('kroners', UnitCategories.CZK, Languages.EN, None, numbers_validity_not_ones, False, None))
+
+units.add_unit(Unit('$', UnitCategories.USD, Languages.CS, None, [], True, None, True))
+units.add_unit(Unit('dolar', UnitCategories.USD, Languages.CS, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('dolary', UnitCategories.USD, Languages.CS, None, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('dolarů', UnitCategories.USD, Languages.CS, None, numbers_validity_more_than_5, False, None))
+
+units.add_unit(Unit('$', UnitCategories.USD, Languages.EN, None, [], True, None, True))
+units.add_unit(Unit('$', UnitCategories.USD, Languages.EN, None, [], True, None, True))
+units.add_unit(Unit('dollar', UnitCategories.USD, Languages.EN, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('dollars', UnitCategories.USD, Languages.EN, None, numbers_validity_not_ones, False, None))
+
+units.add_unit(Unit('€', UnitCategories.EUR, Languages.CS, None, [], True, None, True))
+units.add_unit(Unit('euro', UnitCategories.EUR, Languages.CS, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('eura', UnitCategories.EUR, Languages.CS, None, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('eur', UnitCategories.EUR, Languages.CS, None, numbers_validity_more_than_5, False, None))
+
+units.add_unit(Unit('€', UnitCategories.EUR, Languages.EN, None, [], True, None, True))
+units.add_unit(Unit('euro', UnitCategories.EUR, Languages.EN, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('euros', UnitCategories.EUR, Languages.EN, None, numbers_validity_not_ones, False, None))
+
+units.add_unit(Unit('£', UnitCategories.GBP, Languages.CS, None, [], True, None, True))
+units.add_unit(Unit('libra', UnitCategories.GBP, Languages.CS, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('libry', UnitCategories.GBP, Languages.CS, None, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('liber', UnitCategories.GBP, Languages.CS, None, numbers_validity_more_than_5, False, None))
+
+units.add_unit(Unit('£', UnitCategories.GBP, Languages.EN, None, [], True, None, True))
+units.add_unit(Unit('pound', UnitCategories.GBP, Languages.EN, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('pounds', UnitCategories.GBP, Languages.EN, None, numbers_validity_not_ones, False, None))
+
+units.add_unit(Unit('°C', UnitCategories.C, Languages.CS, None, [], True, None))
+units.add_unit(Unit('° C', UnitCategories.C, Languages.CS, None, [], True, None))
+units.add_unit(Unit('stupeň celsia', UnitCategories.C, Languages.CS, None, [], False, None))
+units.add_unit(Unit('stupeň Celsia', UnitCategories.C, Languages.CS, None, [], False, None))
+units.add_unit(Unit('stupně celsia', UnitCategories.C, Languages.CS, None, [], False, None))
+units.add_unit(Unit('stupně Celsia', UnitCategories.C, Languages.CS, None, [], False, None))
+units.add_unit(Unit('stupňů celsia', UnitCategories.C, Languages.CS, None, [], False, None))
+units.add_unit(Unit('stupňů Celsia', UnitCategories.C, Languages.CS, None, [], False, None))
+
+units.add_unit(Unit('°C', UnitCategories.C, Languages.EN, None, [], True, None))
+units.add_unit(Unit('° C', UnitCategories.C, Languages.EN, None, [], True, None))
+units.add_unit(Unit('degree Celsius', UnitCategories.C, Languages.EN, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('degree celsius', UnitCategories.C, Languages.EN, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('degrees Celsius', UnitCategories.C, Languages.EN, None, numbers_validity_not_ones, False, None))
+units.add_unit(Unit('degrees celsius', UnitCategories.C, Languages.EN, None, numbers_validity_not_ones, False, None))
+
+units.add_unit(Unit('°F', UnitCategories.F, Languages.CS, None, [], True, None))
+units.add_unit(Unit('° F', UnitCategories.F, Languages.CS, None, [], True, None))
+units.add_unit(Unit('stupeň fahrenheita', UnitCategories.F, Languages.CS, None, [], False, None))
+units.add_unit(Unit('stupeň Fahrenheita', UnitCategories.F, Languages.CS, None, [], False, None))
+units.add_unit(Unit('stupně fahrenheita', UnitCategories.F, Languages.CS, None, [], False, None))
+units.add_unit(Unit('stupně Fahrenheita', UnitCategories.F, Languages.CS, None, [], False, None))
+units.add_unit(Unit('stupňů fahrenheita', UnitCategories.F, Languages.CS, None, [], False, None))
+units.add_unit(Unit('stupňů Fahrenheita', UnitCategories.F, Languages.CS, None, [], False, None))
+
+units.add_unit(Unit('°F', UnitCategories.F, Languages.EN, None, [], True, None))
+units.add_unit(Unit('° F', UnitCategories.F, Languages.EN, None, [], True, None))
+units.add_unit(Unit('degree Fahrenheit', UnitCategories.F, Languages.EN, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('degree fahrenheit', UnitCategories.F, Languages.EN, None, numbers_validity_ones, False, None))
+units.add_unit(Unit('degrees Fahrenheit', UnitCategories.F, Languages.EN, None, numbers_validity_not_ones, False, None))
+units.add_unit(Unit('degrees fahrenheit', UnitCategories.F, Languages.EN, None, numbers_validity_not_ones, False, None))
+
+
 # IMPERIAL
 # units.add_unit(Unit('in', UnitCategories.IN, Languages.EN, None, [], True, None))
+
+
 units.add_unit(Unit('inch', UnitCategories.IN, Languages.EN, numbers_validity_ones, [], False, None))
 units.add_unit(Unit('inches', UnitCategories.IN, Languages.EN, numbers_validity_not_ones, [], False, None))
 
