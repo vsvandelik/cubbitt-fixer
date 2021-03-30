@@ -2,7 +2,7 @@ import argparse
 import re
 from typing import Union, Optional, List, Tuple
 
-from ._alignerapi import AlignerApi
+from ._alignerapi import ExternalAligner, OrderAligner
 from ._languages import Languages, Language
 from ._units import units, Unit
 from ._statistics import StatisticsMarks

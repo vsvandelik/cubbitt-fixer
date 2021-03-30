@@ -42,7 +42,7 @@ def process_sentences_in_file(folder_path: str, filename: str, fixer_instance: F
             result_sentence = None
 
             # Check fix broken sentence
-            result = fixer_instance.fix(original_sentence, translated_sentence)
+            result, _ = fixer_instance.fix(original_sentence, translated_sentence)
             if isinstance(result, bool):  # True or False
                 result_sentence = translated_sentence
             elif result:
@@ -55,7 +55,7 @@ def process_sentences_in_file(folder_path: str, filename: str, fixer_instance: F
                 report_file.writelines([original_sentence, translated_sentence, result_sentence, correct_sentence, '\n'])
 
             # Check leave correct sentence
-            result = fixer_instance.fix(original_sentence, correct_sentence)
+            result, _ = fixer_instance.fix(original_sentence, correct_sentence)
             if result is True:
                 true_negative += 1
             else:

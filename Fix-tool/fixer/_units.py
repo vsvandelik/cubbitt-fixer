@@ -291,6 +291,10 @@ class UnitsWrapper:
 
         return None
 
+    def get_units_words_list(self, language: Language) -> List[str]:
+        units_for_language = self.get_all_units_for_language(language)
+        return [unit.word for unit in units_for_language]
+
     def get_regex_units_for_language(self, language: Language) -> str:
         units_for_language = self.get_all_units_for_language(language)
 
