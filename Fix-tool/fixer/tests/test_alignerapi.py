@@ -1,4 +1,4 @@
-from fixer._alignerapi import *
+from fixer._aligner import *
 
 
 def test_get_external_alignment():
