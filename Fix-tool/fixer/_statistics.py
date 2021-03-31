@@ -2,6 +2,8 @@ from enum import Enum
 
 
 class StatisticsMarks(Enum):
+    """Labels for statistics about fixer"""
+
     SINGLE_NUMBER_UNIT_SENTENCE = 0
     MULTIPLE_NUMBER_UNIT_SENTENCE = 1
     CORRECT_NUMBER_UNIT = 2

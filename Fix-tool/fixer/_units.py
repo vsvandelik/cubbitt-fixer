@@ -99,12 +99,12 @@ class UnitCategories:
     MI = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT, 5280)
     FT2 = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None, conversion=UnitsConvertors.area_convertor)
     MI2 = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT2, 27878400)
-    CZK = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    USD = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    GBP = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    EUR = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    C = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    F = UnitCategory([UnitsSystem.SI,UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    CZK = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    USD = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    GBP = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    EUR = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    C = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    F = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
 
     @staticmethod
     def get_categories_by_groups():
@@ -129,35 +129,6 @@ class UnitCategories:
 
 units_categories = UnitCategories.get_categories_by_groups()
 
-"""
-    def __init__(self):
-        self.categories_groups = {}
-
-        all_categories = [a for a in dir(UnitCategories) if not a.startswith('__')]
-        for category in all_categories:
-            category_object = getattr(UnitCategories, category)
-            if category_object.base is None:
-                self.categories_groups[category_object] = []
-            else:
-                if category_object.base not in self.categories_groups.keys():
-                    self.categories_groups[category_object.base] = []
-
-                self.categories_groups[category_object.base].append(category_object)
-
-    @staticmethod
-    def weight_conversion(number: Union[float, int], original_category: UnitCategory):
-        base = number
-        if original_category.base is None:
-            base = number * original_category.base_coefficient
-
-        if original_category.system == UnitsSystem.SI:
-            target = base * (1 / 453.59237)
-        else:
-            target = base * 453.59237
-
-units_categories = UnitCategories()
-"""
-
 
 class Unit:
 
@@ -169,7 +140,7 @@ class Unit:
                  recalculators: list,
                  abbreviation: bool,
                  dialect: Optional[UnitDialect],
-                 before_number: bool=False):
+                 before_number: bool = False):
         self.word = word
         self.category = category
         self.language = language
@@ -221,7 +192,7 @@ class UnitsWrapper:
         self.__units_by_languages = {}
         self.__units_by_language_category = None
 
-    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, replacement_for: Unit=None, strict_category=None):
+    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, replacement_for: Unit = None, strict_category=None):
         if not strict_category:
             strict_category = original_unit.category
 
@@ -305,7 +276,7 @@ class UnitsWrapper:
     def get_regex_units_for_language_before_numbers(self, language: Language) -> str:
         units_for_language = self.get_all_units_for_language(language)
 
-        pattern ='|'.join([unit.word for unit in units_for_language if unit.before_number is True])
+        pattern = '|'.join([unit.word for unit in units_for_language if unit.before_number is True])
 
         pattern = '<!>' if pattern == '' else pattern
 
@@ -320,42 +291,6 @@ class UnitsWrapper:
 
         return self.__units_by_languages[language]
 
-"""
-    def get_words_by_category_language(self, category: int, language: Language) -> List[str]:
-        words = []
-        for unit in self.__units:
-            if unit.category == category and unit.language == language:
-                words.append(unit.word)
-
-        return words
-"""
-
-
-"""
-class UnitsRecalculator(ABC):
-
-    @staticmethod
-    def recalculate(original_unit: Unit, translated_unit: Unit, original_number: Union[int, float]):
-        pass
-
-
-class WeightRecalculator(UnitsRecalculator):
-    si_recalculations = {
-        UnitCategory.G: 1,
-        UnitCategory.KG: 1000,
-    }
-
-    imperial_recalculations = {
-        UnitCategory.LB: 1,
-    }
-
-    default_metric = UnitCategory.G
-    default_imperial = UnitCategory.LB
-
-    @staticmethod
-    def recalculate(original_unit: Unit, translated_unit: Unit, original_number: Union[int, float]):
-        if original_unit.category !=
-"""
 
 numbers_validity_ones = [-1, 1]
 numbers_validity_not_ones = [(None, -1), (1, None), float]
@@ -364,7 +299,6 @@ numbers_validity_more_than_5 = [(None, -4), (4, None)]
 numbers_validity_decimal = [float]
 
 units = UnitsWrapper()
-
 
 units.add_unit(Unit('km/h', UnitCategories.KMH, Languages.CS, None, [], True, None))
 units.add_unit(Unit('kph', UnitCategories.KMH, Languages.CS, None, [], True, None))
@@ -598,7 +532,6 @@ units.add_unit(Unit('degree fahrenheit', UnitCategories.F, Languages.EN, None, n
 units.add_unit(Unit('degrees Fahrenheit', UnitCategories.F, Languages.EN, None, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('degrees fahrenheit', UnitCategories.F, Languages.EN, None, numbers_validity_not_ones, False, None))
 
-
 # IMPERIAL
 # units.add_unit(Unit('in', UnitCategories.IN, Languages.EN, None, [], True, None))
 
@@ -629,120 +562,3 @@ units.add_unit(Unit('mile', UnitCategories.MI, Languages.EN, numbers_validity_on
 units.add_unit(Unit('miles', UnitCategories.MI, Languages.EN, numbers_validity_not_ones, [], False, None))
 
 units.add_unit(Unit('pounds', UnitCategories.LB, Languages.EN, numbers_validity_not_ones, [], False, None))
-
-"""
-units = {
-    'km/h': {
-        'cs': ['km/h', 'kph', 'kilometr za hodinu', 'kilometry za hodinu', 'kilometrů za hodinu', 'kilometrů v hodině',
-               'kilometr v hodině', 'kilometry v hodině'],
-        'en': ['km/h', 'kph', 'kilometers per hour', 'kilometer per hour', 'kilometres per hour', 'kilometres an hour',
-               'kilometers an hour', 'kilometer-an-hour']},
-    'm/s': {
-        'cs': ['m/s', 'mps', 'metr za sekundu', 'metry za sekundu', 'metrů za sekundu', 'metru za sekundu'],
-        'en': ['m/s', 'mps', 'meters per second', 'meter per second']},
-    'm2': {
-        'cs': ['metr čtvereční', 'metru čtverečního', 'metry čtvereční', 'metrů čtverečních'],
-        'en': ['square meter', 'square meters', 'square metre', 'square metres', 'square-metre', 'square-meter']},
-    'km2': {
-        'cs': ['kilometr čtvereční', 'kilometru čtverečního', 'kilometry čtvereční', 'kilometrů čtverečních'],
-        'en': ['square kilometer', 'square kilometers', 'square kilometre', 'square kilometres', 'square-kilometre',
-               'square-kilometer']},
-    'm3': {
-        'cs': ['metr krychlový', 'metru krychlového', 'metry krychlové', 'metrů krychlových'],
-        'en': ['cubic meter', 'cubic meters', 'cubic metre', 'cubic metres']},
-    'km': {
-        'cs': ['km', 'kilometr', 'kilometry', 'kilometrů', 'kilometru'],
-        'en': ['km', 'kilometers', 'kilometer', 'kilometre', 'kilometres']},
-    'm': {
-        'cs': ['m', 'metr', 'metry', 'metrů', 'metru'],
-        'en': ['m', 'meters', 'meter', 'metre', 'metres']},
-    'dm': {
-        'cs': ['dm', 'decimetr', 'decimetry', 'decimetrů'],
-        'en': ['dm', 'decimeters', 'decimeter', 'metre', 'metres']},
-    'cm': {
-        'cs': ['cm', 'centimetr', 'centimetry', 'centimetrů'],
-        'en': ['cm', 'centimeters', 'centimeter', 'centimetre', 'centimetre', 'centimetres']},
-    'mm': {
-        'cs': ['mm', 'milimetr', 'milimetry', 'milimetrů'],
-        'en': ['mm', 'millimeters', 'millimeter', 'milimetre', 'millimetre', 'milimetres', 'millimetres']},
-    'g': {
-        'cs': ['g', 'gram', 'gramy', 'gramů'],
-        'en': ['g', 'grams', 'gram']},
-    'kg': {
-        'cs': ['kg', 'kilogram', 'kilogramy', 'kilogramů', 'kila', 'kilo', 'kil'],
-        'en': ['kg', 'kilograms', 'kilogram', 'kilos']},
-}
-
-
-if __name__ == "__main__":
-    for idx, category in enumerate(units.keys()):
-        category_upper = category.replace('/', '').upper()
-        print(f"{category_upper} = {idx}")
-
-        
-        for language, language_values in category_values.items():
-            language_parsed = Languages.CS if language == 'cs' else Languages.EN
-
-            for unit in language_values:
-                abbrevation = True if len(unit) <= 2 else False
-
-                print(f"units.add_unit(Unit('{unit}', UnitCategory.{category_upper}, {language_parsed}, None, [], {abbrevation}, None))")
-
-
-units_by_language = {}
-for _, val in units.items():
-    for lang, u in val.items():
-        if lang not in units_by_language.keys():
-            units_by_language[lang] = []
-
-        units_by_language[lang] += u
-
-units_strings = {lang: '|'.join(units_list) for lang, units_list in units_by_language.items()}
-
-units_categories = {}
-for category, val in units.items():
-    for lang, lang_list in val.items():
-        if lang not in units_categories.keys():
-            units_categories[lang] = {}
-
-        for unit in lang_list:
-            units_categories[lang][unit] = category
-"""
-"""
-lenght_units = {
-    'si': (
-        ['m', 'mm', 'cm', 'dm', 'km'],
-        [1, 0.001, 0.01, 0.1, 1000]
-    ),
-    'imperial': (
-        ['in', 'ft', 'yd', 'miles'],
-        [1, 12, 36, 63360]
-    ),
-    'si-imp': 39.37007874,
-    'imp-si': 0.0254
-}
-
-
-def convert_to_specific(number, rest, source, rate, target):
-    idx = source[0].index(rest)
-    number_in_base = number * source[1][idx]
-
-    base_in_second = number_in_base * rate
-    for i in range(len(target[0]) - 1, -1, -1):
-        calc = base_in_second / target[1][i]
-        if calc >= 1:
-            return calc, target[0][i]
-
-    return base_in_second, target[0][0]
-
-
-def convert_unit(number: int, rest: str):
-    if rest in lenght_units['si'][0]:
-        number, rest = convert_to_specific(number, rest, lenght_units['si'], lenght_units['si-imp'],
-                                           lenght_units['imperial'])
-    elif rest in lenght_units['imperial'][0]:
-        number, rest = convert_to_specific(number, rest, lenght_units['imperial'], lenght_units['imp-si'],
-                                           lenght_units['si'])
-
-    return number, rest
-"""

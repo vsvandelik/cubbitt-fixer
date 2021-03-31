@@ -11,14 +11,29 @@ Welcome to Lindat translation postprocessor's documentation!
    :undoc-members:
    :private-members:
 
-.. automodule:: _units
+.. automodule:: fixer._aligner
+   :members:
+   :undoc-members:
+
+.. automodule:: fixer._languages
    :members:
    :undoc-members:
    :private-members:
 
-.. automodule:: alignerapi
+.. automodule:: fixer._numbers_fixer
    :members:
+   :undoc-members:
+   :private-members:
 
+.. automodule:: fixer._statistics
+   :members:
+   :undoc-members:
+   :private-members:
+
+.. automodule:: fixer._units
+   :members:
+   :undoc-members:
+   :private-members:
 
 .. toctree::
    :maxdepth: 2

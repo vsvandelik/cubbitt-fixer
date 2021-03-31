@@ -1,8 +1,7 @@
 import re
 from typing import Union, Optional, List, Tuple
 
-from ._aligner import ExternalAligner
-from ._languages import Languages, Language
+from ._languages import Language
 from ._statistics import StatisticsMarks
 from ._units import units, Unit
 
@@ -10,15 +9,18 @@ Number = Union[int, float]
 
 
 class NumberFixer:
-    """Fixer for problems with numbers with units.
+    """Fixer for problems with numbers and units.
 
-    Checks whenever sentence contains any number-unit mistakes and tries to fix them.
-    Currently it supports fixing sentences where is only one number-unit pair.
+    Checks whenever sentence contains any number-unit mistakes and tries to fix them. Based
+    on count of number-unit pairs concrete fix methods are selected.
 
-    Currently implemented fixes:
+    For sentences where are more than one number-units pairs, the external tool (word-aligners)
+    are used.
 
-    - untranslated decimal points marks
-    - replacing wrong units for their original variants
+    :param: approximately: flag whenever it  should consider approximation phrases
+    :param recalculate: flag whenever it should change correct units into different ones
+    :param source_lang: language of the sentence given from user
+    :param target_lang: language of the sentence translated by user
     """
 
     def __init__(self, approximately: bool, recalculate: bool, source_lang: Language, target_lang: Language):
@@ -34,25 +36,21 @@ class NumberFixer:
         self.number_patter_target = re.compile(
             rf"((?:{units.get_regex_units_for_language_before_numbers(target_lang)})\s?\d[\d .,]*|\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(target_lang)})\b|\d+\'\d+\")")
 
-    def fix_numbers_problems(self, original_text: str, translated_text: str) -> Tuple[Optional[Union[str, bool]], List]:
+    def fix_numbers_problems(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
         """Fix numbers problems in given sentence based on original text and translated text.
-
-        For supported operations looks at class documentation.
 
         There are two fixing methods. One for single number problem and the second for the rest. That is because
         there are used different heuristics for each case.
 
         :param original_text: Text in source language for verifying the translation.
         :param translated_text: Text translated by translator.
-        :return:
-            - fixed sentence
-            - True is sentence is correct
-            - False is sentence cannot be fixed
-            - None if there exists no fixer
-        :rtype:
-            None if there is any fixer for given sentence
-            Bool when the sentence is correct (True) or is unfixable (False)
-            Str  when the sentence was fixed
+        :return: tuple with fixer output:
+
+            - result of the fixer
+                - corrected sentence if it was possible
+                - `false` if there is a problem which cannot be fixed
+                - `true` is there was found no problem
+            - list with flags labeling the sentence and the correction
         """
         problems = self.__find_numbers_units(original_text, self.source_lang)
 
@@ -65,12 +63,25 @@ class NumberFixer:
         else:
             return True, []
 
-    def __fix_sentence_multiple_units(self, numbers_units_pairs: List[Tuple[bool, Number, Unit]], original_text: str, translated_text: str):
-        if self.source_lang == Languages.CS:
-            word_alignment = ExternalAligner.get_alignment(translated_text, original_text)
-        else:
-            word_alignment = ExternalAligner.get_alignment(original_text, translated_text)
+    def __fix_sentence_multiple_units(self, numbers_units_pairs: List[Tuple[bool, Number, Unit]], original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
+        """Main method for fixing sentences with multiple number-unit pairs.
 
+        Based on given filtered number-unit phrases it tries to verify
+        whenever the translation contains same data. The translation
+        is consider as correct if all the filtered phrases has matching
+        phrases in the translation.
+
+        :param numbers_units_pairs: filtered phrases with number-unit
+        :param original_text: sentence in source language
+        :param translated_text: original sentence translation
+        :return: tuple with fixer output:
+
+            - result of the fixer
+                - corrected sentence if it was possible
+                - `false` if there is a problem which cannot be fixed
+                - `true` is there was found no problem
+            - list with flags labeling the sentence and the correction
+        """
         problems_count = len(numbers_units_pairs)
 
         marks = [StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE]
@@ -87,7 +98,7 @@ class NumberFixer:
         else:
             return True, [StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE, StatisticsMarks.CORRECT_MULTIPLE_NUMBER_UNIT_SENTENCE]
 
-    def __fix_single_number(self, problem_part: Tuple[bool, Number, Unit], original_text: str, translated_text: str) -> Tuple[Optional[Union[str, bool]], List]:
+    def __fix_single_number(self, problem_part: Tuple[bool, Number, Unit], original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
         """Fix sentence with single number problem.
 
         It searches for matching number in both original and translated text and compares numbers and units.
@@ -95,8 +106,13 @@ class NumberFixer:
         :param problem_part: extracted problematic part from the original sentence
         :param original_text: Text in source language for verifying the translation.
         :param translated_text: Text translated by translator.
-        :return: repaired sentence or True when sentence is correct or False when sentence cannot be fixed
-        :rtype: str or boolean
+        :return: tuple with fixer output:
+
+            - result of the fixer
+                - corrected sentence if it was possible
+                - `false` if there is a problem which cannot be fixed
+                - `true` is there was found no problem
+            - list with flags labeling the sentence and the correction
         """
 
         (approximately, number, unit) = problem_part
@@ -157,7 +173,6 @@ class NumberFixer:
         :param text: Sentence to search in.
         :param language: Language of the sentence
         :return: All found parts
-        :rtype: List of tuples with approximately flag, number and unit
         """
         parts = re.findall(self.number_patter_source, text)
         if len(parts) == 0:  # any number-digit part in original text
@@ -185,7 +200,6 @@ class NumberFixer:
         :param number_unit_translated: number-unit part from translated sentence
         :param sentence: full translated sentence
         :return: repaired sentence or None when the sentence is correct
-        :rtype: str or None when the sentence does not have problem
         """
 
         # tries to split number with opposite decimal separator
@@ -213,7 +227,6 @@ class NumberFixer:
         :param language: Language of the text
         :param custom_separator: Keyword-only parameter for specifying custom decimal separator
         :return: Tuple with number and unit as it was split
-        :rtype: tuple with number (float, int) and str
         """
         unit = None
         decimal = False
@@ -267,6 +280,7 @@ class NumberFixer:
 
     @staticmethod
     def __convert_text_to_inches(text: str):
+        """Convert number written as feet and inches (6'12") to inches"""
         feet = 0
         feet_idx_end = None
         inches = 0
