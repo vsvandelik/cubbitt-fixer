@@ -147,11 +147,6 @@ class NumberFixer:
             # different number, same unit
             elif number != tr_number and unit.category == tr_unit.category:
 
-                # verifies if the problem is caused by untranslated decimal separator
-                problem_with_separator = self.__fix_wrong_decimal_separator(number, tr_number, translated_part, translated_text)
-                if problem_with_separator:
-                    return problem_with_separator, [StatisticsMarks.DECIMAL_SEPARATOR_PROBLEM]
-
                 marks = [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT]
                 best_part_fit = translated_part
 
@@ -191,31 +186,6 @@ class NumberFixer:
             problems.append((approximately, number, unit))
 
         return problems
-
-    def __fix_wrong_decimal_separator(self, number_original: Number, number_translated: Number, number_unit_translated: str, sentence: str) -> Optional[str]:
-        """Verifies if the problem with number is decimal-separator-based and tries to fix it.
-
-        :param number_original: number extracted from original sentence
-        :param number_translated: number extracted from translated sentence
-        :param number_unit_translated: number-unit part from translated sentence
-        :param sentence: full translated sentence
-        :return: repaired sentence or None when the sentence is correct
-        """
-
-        # tries to split number with opposite decimal separator
-        tr_number_another_separator, _ = Splitter.split_number_unit(number_unit_translated, self.target_lang, custom_separator=self.target_lang.thousands_separator)
-
-        if number_original == tr_number_another_separator:
-            original_string_number = self.__get_string_number(number_unit_translated)
-
-            if isinstance(number_original, int):
-                repaired_string_number = original_string_number.replace(self.source_lang.thousands_separator, self.target_lang.thousands_separator)
-            else:
-                repaired_string_number = original_string_number.replace(self.source_lang.decimal_separator, self.target_lang.decimal_separator)
-
-            return sentence.replace(original_string_number, repaired_string_number)
-
-        return None
 
     @staticmethod
     def __get_string_number(text: str) -> str:

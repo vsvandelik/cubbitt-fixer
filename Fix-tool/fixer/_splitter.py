@@ -6,6 +6,7 @@ from ._units import Unit, units
 
 
 class StringToNumberUnitConverter:
+    """Supporting class for processing string with number and unit into separate parts."""
 
     @staticmethod
     def split_number_unit(text: str, language: Language, *, custom_separator: str = None) -> Tuple[Number, Unit]:

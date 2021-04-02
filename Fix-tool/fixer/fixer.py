@@ -3,6 +3,7 @@ from typing import Union, List, Tuple
 
 from ._languages import Languages
 from ._numbers_fixer import NumberFixer
+from ._decimal_separator_fixer import DecimalSeparatorFixer
 
 
 class Fixer:
@@ -33,6 +34,8 @@ class Fixer:
             source_lang,
             target_lang)
 
+        self.decimal_separator_fixer = DecimalSeparatorFixer(source_lang, target_lang)
+
     def fix(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
         """Function to fix translation of one sentence based on Fixer attributes.
 
@@ -50,8 +53,10 @@ class Fixer:
             - list with flags labeling the sentence and the correction
         """
         try:
-            repair = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
+            repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
+            translated_text = repair if isinstance(repair, str) else translated_text
+            repair, marks_numbers = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
         except Exception:
             return False, []
 
-        return repair
+        return repair, marks_numbers + marks_separators
