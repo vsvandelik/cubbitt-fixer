@@ -1,11 +1,11 @@
 import re
 from typing import Union, Optional, List, Tuple
 
+from ._custom_types import Number
 from ._languages import Language
+from ._splitter import StringToNumberUnitConverter as Splitter
 from ._statistics import StatisticsMarks
 from ._units import units, Unit
-
-Number = Union[int, float]
 
 
 class NumberFixer:
@@ -126,7 +126,7 @@ class NumberFixer:
         best_part_fit = None
 
         for translated_part in translated_parts:
-            tr_number, tr_unit = self.__split_number_unit(translated_part, self.target_lang)
+            tr_number, tr_unit = Splitter.split_number_unit(translated_part, self.target_lang)
 
             # same number, same unit
             if number == tr_number and unit.category == tr_unit.category:
@@ -186,7 +186,7 @@ class NumberFixer:
             if re.search(f"({'|'.join(language.approximately_phrases)}) {part}", text):
                 approximately = True
 
-            number, unit = self.__split_number_unit(part, language)
+            number, unit = Splitter.split_number_unit(part, language)
 
             problems.append((approximately, number, unit))
 
@@ -203,7 +203,7 @@ class NumberFixer:
         """
 
         # tries to split number with opposite decimal separator
-        tr_number_another_separator, _ = self.__split_number_unit(number_unit_translated, self.target_lang, custom_separator=self.target_lang.thousands_separator)
+        tr_number_another_separator, _ = Splitter.split_number_unit(number_unit_translated, self.target_lang, custom_separator=self.target_lang.thousands_separator)
 
         if number_original == tr_number_another_separator:
             original_string_number = self.__get_string_number(number_unit_translated)
@@ -216,82 +216,6 @@ class NumberFixer:
             return sentence.replace(original_string_number, repaired_string_number)
 
         return None
-
-    @staticmethod
-    def __split_number_unit(text: str, language: Language, *, custom_separator: str = None) -> Tuple[Number, Unit]:
-        """Split number-unit sentence part into separate variables.
-
-        Number is parsed as a float or int. It uses language specific decimal separator.
-
-        :param text: Part of the sentence to split.
-        :param language: Language of the text
-        :param custom_separator: Keyword-only parameter for specifying custom decimal separator
-        :return: Tuple with number and unit as it was split
-        """
-        unit = None
-        decimal = False
-
-        if not custom_separator:
-            custom_separator = language.decimal_separator
-
-        if '"' in text or "'" in text:
-            return NumberFixer.__convert_text_to_inches(text), units.get_unit_by_word('inch', language)
-
-        # fix of situation: "Back in 1892, 250 kilometres"
-        multiple_sentences_split = text.strip(' .,- ').split(', ')
-        if len(multiple_sentences_split) > 1:
-            text = multiple_sentences_split[-1]
-
-        number_string = []
-
-        if text[0].isdigit():
-            for idx, ch in enumerate(text):
-                if ch.isdigit():
-                    number_string.append(ch)
-                elif ch == custom_separator:
-                    number_string.append('.')
-                    decimal = True
-                elif ch.isalpha() or ch == '°':
-                    unit = text[idx:].strip(' -')
-                    break
-        else:
-            unit_complete = False
-            for idx, ch in enumerate(text):
-                if ch.isdigit() and unit_complete is False:
-                    unit = text[:idx].strip(' -')
-                    unit_complete = True
-                    number_string.append(ch)
-                elif ch.isdigit():
-                    number_string.append(ch)
-                elif ch == custom_separator and idx < len(text) - 1:
-                    number_string.append('.')
-                    decimal = True
-
-        if decimal:
-            number = float("".join(number_string))
-        else:
-            number = int("".join(number_string))
-
-        unit = units.get_unit_by_word(unit, language)
-        if unit is None:
-            pass
-
-        return number, unit
-
-    @staticmethod
-    def __convert_text_to_inches(text: str):
-        """Convert number written as feet and inches (6'12") to inches"""
-        feet = 0
-        feet_idx_end = None
-        inches = 0
-        for idx, l in enumerate(text):
-            if l == "'":
-                feet = int(text[:idx])
-                feet_idx_end = idx
-            elif l == '"':
-                inches = int(text[feet_idx_end + 1:idx])
-
-        return inches + 12 * feet
 
     @staticmethod
     def __get_string_number(text: str) -> str:

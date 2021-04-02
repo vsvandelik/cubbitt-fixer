@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Union, Optional, List
 
 from ._languages import Language, Languages
+from ._custom_types import Number
 
 
 class UnitsSystem(Enum):
@@ -27,7 +28,7 @@ class UnitCategory:
 class UnitsConvertors:
 
     @staticmethod
-    def get_best_unit_for_converted_number(number: Union[int, float], category: UnitCategory, language: Language, original_unit, translated_unit):
+    def get_best_unit_for_converted_number(number: Number, category: UnitCategory, language: Language, original_unit, translated_unit):
         best_number, best_category = number, category
 
         for category in units_categories[category]:
@@ -46,7 +47,7 @@ class UnitsConvertors:
         return best_number, best_unit
 
     @staticmethod
-    def length_convertor(original_number: Union[int, float], original_category: UnitCategory, target_system: UnitsSystem):
+    def length_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
         if UnitsSystem.SI in original_category.system:
             target_number = original_number / 0.3048
             target_category = UnitCategories.FT
@@ -57,7 +58,7 @@ class UnitsConvertors:
         return target_number, target_category
 
     @staticmethod
-    def weight_convertor(original_number: Union[int, float], original_category: UnitCategory, target_system: UnitsSystem):
+    def weight_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
         if UnitsSystem.SI in original_category.system:
             target_number = original_number / 453.59237
             target_category = UnitCategories.LB
@@ -68,7 +69,7 @@ class UnitsConvertors:
         return target_number, target_category
 
     @staticmethod
-    def area_convertor(original_number: Union[int, float], original_category: UnitCategory, target_system: UnitsSystem):
+    def area_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
         if UnitsSystem.SI in original_category.system:
             target_number = original_number * 10.764
             target_category = UnitCategories.FT2
@@ -155,7 +156,7 @@ class Unit:
             self.dialect = None
 
     @staticmethod
-    def number_pass_numbers_validity(validity: List, number: Union[int, float]) -> bool:
+    def number_pass_numbers_validity(validity: List, number: Number) -> bool:
         if isinstance(number, float):
             if float in validity:
                 return True
@@ -219,7 +220,7 @@ class UnitsWrapper:
         options_list.sort(key=lambda tup: tup[0], reverse=True)
         return options_list[0][1]
 
-    def convert_number(self, target_language: Language, target_unit_system: UnitsSystem, actual_number: Union[int, float], original_unit: Unit, translated_unit: Unit):
+    def convert_number(self, target_language: Language, target_unit_system: UnitsSystem, actual_number: Number, original_unit: Unit, translated_unit: Unit):
         actual_category = original_unit.category
         if actual_category.base:
             actual_number = actual_number * original_unit.category.base_coefficient
