@@ -54,6 +54,18 @@ def test_split_number_unit_number_after_space(language):
 
 
 @pytest.mark.parametrize("language", Languages.get_languages_list())
-def test_split_number_unit_number_multiple_sentences(language):
+def test_split_number_unit_multiple_sentences(language):
     number, unit = Splitter.split_number_unit("Back in 1892, 250 kilometres", language)
     assert number == 250 and unit == units.get_unit_by_word("kilometres", language)
+
+
+@pytest.mark.parametrize("language", Languages.get_languages_list())
+def test_split_number_unit_nonexisting_unit(language):
+    number, unit = Splitter.split_number_unit("250 abc", language)
+    assert number == 250 and unit == None
+
+
+@pytest.mark.parametrize("language", Languages.get_languages_list())
+def test_split_number_unit_unparsable_number(language):
+    with pytest.raises(ValueError):
+        number, unit = Splitter.split_number_unit("250.45.2,25,12 km", language)
