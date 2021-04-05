@@ -53,10 +53,13 @@ class Fixer:
             - list with flags labeling the sentence and the correction
         """
         try:
-            repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
-            translated_text = repair if isinstance(repair, str) else translated_text
+            decimal_repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
+            translated_text = decimal_repair if isinstance(decimal_repair, str) else translated_text
             repair, marks_numbers = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
         except Exception:
             return False, []
 
-        return repair, marks_numbers + marks_separators
+        if repair is True and isinstance(decimal_repair, str):
+            return decimal_repair, marks_numbers + marks_separators
+        else:
+            return repair, marks_numbers + marks_separators
