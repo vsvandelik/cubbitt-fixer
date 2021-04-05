@@ -6,6 +6,7 @@ from ._languages import Language
 from ._splitter import StringToNumberUnitConverter as Splitter
 from ._statistics import StatisticsMarks
 from ._units import units, Unit
+from ._replacer import Replacer
 
 
 class NumberFixer:
@@ -139,6 +140,7 @@ class NumberFixer:
         wrong_number = []
 
         for translated_part in translated_parts:
+            translated_part = translated_part.strip()
             tr_number, tr_unit = Splitter.split_number_unit(translated_part, self.target_lang)
 
             # same number, same unit
@@ -169,7 +171,8 @@ class NumberFixer:
         if len(wrong_units) == 1:
             tr_number, tr_unit, translated_part = wrong_units.pop()
             suitable_unit = units.get_correct_unit(self.target_lang, number, unit, tr_unit)
-            return translated_text.replace(tr_unit.word, suitable_unit.word), [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT]
+            fixed_sentence = Replacer.replace_unit(translated_text, translated_part, tr_number, tr_unit, suitable_unit)
+            return fixed_sentence, [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT]
 
         if len(wrong_number) == 1:
             # TODO: Replacement
