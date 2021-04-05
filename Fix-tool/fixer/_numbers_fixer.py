@@ -83,6 +83,7 @@ class NumberFixer:
             - list with flags labeling the sentence and the correction
         """
         problems_count = len(numbers_units_pairs)
+        fixes_count = 0
 
         marks = [StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE]
 
@@ -91,10 +92,16 @@ class NumberFixer:
             if single_fix is True:
                 problems_count -= 1
                 continue
+            elif isinstance(single_fix, str):
+                translated_text = single_fix
+                fixes_count += 1
+                problems_count -= 1
             marks += marks_individual
 
         if problems_count > 0:
             return False, list(dict.fromkeys(marks))
+        elif fixes_count > 0:
+            return translated_text, list(dict.fromkeys(marks))
         else:
             return True, [StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE, StatisticsMarks.CORRECT_MULTIPLE_NUMBER_UNIT_SENTENCE]
 
@@ -125,6 +132,12 @@ class NumberFixer:
         # uses when trying to decide where to replace wrong translation for the correct one
         best_part_fit = None
 
+        # list of all same numbers with wrong unit, if the list contains just one item, the unit can be changed
+        wrong_units = []
+
+        # list of all wrong numbers with same unit, if the list contains just one item, the number can be changed
+        wrong_number = []
+
         for translated_part in translated_parts:
             tr_number, tr_unit = Splitter.split_number_unit(translated_part, self.target_lang)
 
@@ -134,9 +147,10 @@ class NumberFixer:
 
             # same number, different unit
             elif number == tr_number and unit.category != tr_unit.category:
+                wrong_units.append((tr_number, tr_unit, translated_part))
+                '''
                 suitable_unit = units.get_correct_unit(self.target_lang, number, unit, tr_unit)
                 return translated_text.replace(tr_unit.word, suitable_unit.word), [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT]
-                '''
                 converted_number, new_unit = units.convert_number(self.target_lang, UnitsSystem.Imperial, number, unit, tr_unit)
                 if isinstance(number, int):
                     converted_number = round(converted_number)
@@ -146,16 +160,20 @@ class NumberFixer:
                 '''
             # different number, same unit
             elif number != tr_number and unit.category == tr_unit.category:
-
-                marks = [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT]
-                best_part_fit = translated_part
+                wrong_number.append((tr_number, tr_unit, translated_part))
 
             # different number, different unit
-            elif not best_part_fit:
-                best_part_fit = translated_part
+            else:
+                pass
 
-        if best_part_fit:
-            return translated_text.replace(best_part_fit, f"{number} {units.get_correct_unit(self.target_lang, number, unit).word}"), marks
+        if len(wrong_units) == 1:
+            tr_number, tr_unit, translated_part = wrong_units.pop()
+            suitable_unit = units.get_correct_unit(self.target_lang, number, unit, tr_unit)
+            return translated_text.replace(tr_unit.word, suitable_unit.word), [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT]
+
+        if len(wrong_number) == 1:
+            # TODO: Replacement
+            pass
 
         return False, []
 
