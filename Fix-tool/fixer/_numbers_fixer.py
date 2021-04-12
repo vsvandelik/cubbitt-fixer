@@ -56,9 +56,9 @@ class NumberFixer:
 
         # preparing regex patterns based on supported units
         self.number_patter_source = re.compile(
-            rf"((?:{units.get_regex_units_for_language_before_numbers(source_lang)})\s?\d[\d .,]*|\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(source_lang)})\b|\d+\'\d+\")")
+            rf"((?:{units.get_regex_units_for_language_before_numbers(source_lang)})\s?\d[\d .,]*(\s(?:{source_lang.big_numbers_scale_keys}))?|\d[\d .,]*[\s-]?((?:{source_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(source_lang)})\b|\d+\'\d+\")")
         self.number_patter_target = re.compile(
-            rf"((?:{units.get_regex_units_for_language_before_numbers(target_lang)})\s?\d[\d .,]*|\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(target_lang)})\b|\d+\'\d+\")")
+            rf"((?:{units.get_regex_units_for_language_before_numbers(target_lang)})\s?\d[\d .,]*(\s(?:{target_lang.big_numbers_scale_keys}))?|\d[\d .,]*[\s-]?((?:{target_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(target_lang)})\b|\d+\'\d+\")")
 
         self.normal_inaccuracy = normal_inaccuracy
         self.approximately_inaccuracy_inaccuracy = approximately_inaccuracy

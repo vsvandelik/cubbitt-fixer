@@ -14,6 +14,11 @@ class NumberUnitFinderResult:
         self.unit = unit
         self.approximately = approximately
         self.text_part = text_part
+        self.scaling = None
+
+    def add_scaling(self, scaling: int):
+        self.scaling = scaling
+        self.number *= scaling
 
 
 class Finder:
@@ -37,14 +42,26 @@ class Finder:
 
         pairs = []
         for part in parts:
+            part = part[0]
 
             # search for some approximately word before the number
             approximately = False
             if re.search(f"({'|'.join(language.approximately_phrases)}) {part}", sentence):
                 approximately = True
 
-            number, unit = Splitter.split_number_unit(part, language)
+            part_without_scaling = part
+            scale_key = None
+            for scale in language.big_numbers_scale.keys():
+                if scale in part:
+                    scale_key = scale
+                    part_without_scaling = part.replace(scale, '')
+                    break
+
+            number, unit = Splitter.split_number_unit(part_without_scaling, language)
 
             pairs.append(NumberUnitFinderResult(number, unit, approximately, part))
+
+            if scale_key:
+                pairs[-1].add_scaling(language.big_numbers_scale[scale_key])
 
         return pairs
