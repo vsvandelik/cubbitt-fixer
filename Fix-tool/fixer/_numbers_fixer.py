@@ -1,12 +1,35 @@
 import re
-from typing import Union, Optional, List, Tuple
+from typing import Union, List, Tuple, Dict
 
-from ._custom_types import Number
+from ._finder import Finder, NumberUnitFinderResult
 from ._languages import Language
-from ._splitter import StringToNumberUnitConverter as Splitter
-from ._statistics import StatisticsMarks
-from ._units import units, Unit
 from ._replacer import Replacer
+from ._statistics import StatisticsMarks
+from ._units import units
+
+
+class Relationship:
+
+    def __init__(self):
+        self.same_number_same_unit = set()
+        self.same_number_different_unit = set()
+        self.different_number_same_unit = set()
+        self.different_number_different_unit = set()
+
+    def remove_src_sentence(self, idx: int):
+        self.same_number_same_unit.discard(idx)
+        self.same_number_different_unit.discard(idx)
+        self.different_number_same_unit.discard(idx)
+        self.different_number_different_unit.discard(idx)
+
+    def get_list_by_level(self, level: int):
+        levels = {
+            0: self.same_number_same_unit,
+            1: self.same_number_different_unit,
+            2: self.different_number_same_unit,
+            3: self.different_number_different_unit
+        }
+        return levels[level]
 
 
 class NumberFixer:
@@ -24,7 +47,7 @@ class NumberFixer:
     :param target_lang: language of the sentence translated by user
     """
 
-    def __init__(self, approximately: bool, recalculate: bool, source_lang: Language, target_lang: Language):
+    def __init__(self, approximately: bool, recalculate: bool, source_lang: Language, target_lang: Language, normal_inaccuracy: float, approximately_inaccuracy: float):
         self.approximately = approximately
         self.recalculate = recalculate
 
@@ -36,6 +59,9 @@ class NumberFixer:
             rf"((?:{units.get_regex_units_for_language_before_numbers(source_lang)})\s?\d[\d .,]*|\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(source_lang)})\b|\d+\'\d+\")")
         self.number_patter_target = re.compile(
             rf"((?:{units.get_regex_units_for_language_before_numbers(target_lang)})\s?\d[\d .,]*|\d[\d .,]*[\s-]?(?:{units.get_regex_units_for_language(target_lang)})\b|\d+\'\d+\")")
+
+        self.normal_inaccuracy = normal_inaccuracy
+        self.approximately_inaccuracy_inaccuracy = approximately_inaccuracy
 
     def fix_numbers_problems(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
         """Fix numbers problems in given sentence based on original text and translated text.
@@ -53,17 +79,129 @@ class NumberFixer:
                 - `true` is there was found no problem
             - list with flags labeling the sentence and the correction
         """
-        problems = self.__find_numbers_units(original_text, self.source_lang)
 
-        if len(problems) == 1:
-            fix_result, marks = self.__fix_single_number(problems[0], original_text, translated_text)
-            marks.append(StatisticsMarks.SINGLE_NUMBER_UNIT_SENTENCE)
-            return fix_result, marks
-        elif len(problems) > 1:
-            return self.__fix_sentence_multiple_units(problems, original_text, translated_text)
-        else:
+        src_lang_numbers_units = Finder.find_number_unit_pairs(original_text, self.source_lang, self.number_patter_source)
+        trg_lang_numbers_units = Finder.find_number_unit_pairs(translated_text, self.target_lang, self.number_patter_target)
+
+        marks = []
+
+        if len(src_lang_numbers_units) == 0 and len(trg_lang_numbers_units) == 0:
             return True, []
 
+        elif len(src_lang_numbers_units) != len(trg_lang_numbers_units):
+            return False, [StatisticsMarks.DIFFERENT_COUNT_NUMBERS_UNITS]
+
+        elif len(src_lang_numbers_units) == 1 and len(trg_lang_numbers_units) == 1:
+            marks.append(StatisticsMarks.SINGLE_NUMBER_UNIT_SENTENCE)
+
+        else:
+            marks.append(StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE)
+
+        relationships = self.__prepare_src_trg_pairs_relationships(src_lang_numbers_units, trg_lang_numbers_units)
+
+        levels = {
+            0: self.__process_sentence_same_number_same_unit,
+            1: self.__process_sentence_same_number_different_unit,
+            2: self.__process_sentence_different_number_same_unit,
+            3: self.__process_sentence_different_number_different_unit,
+        }
+
+        result_sentence = translated_text
+
+        for idx, val in levels.items():
+            binding = self.__process_src_trg_pairs_relationships(relationships, idx)
+            result_sentence, m = val(binding, src_lang_numbers_units, trg_lang_numbers_units, result_sentence)
+            marks += m
+
+        if result_sentence == translated_text:
+            return True, marks
+        else:
+            return result_sentence, marks
+
+    def __process_sentence_same_number_same_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        return sentence, [StatisticsMarks.CORRECT_NUMBER_UNIT] if len(bindings) else []
+
+    def __process_sentence_same_number_different_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        for binding_trg, binding_src in bindings:
+            src_pair = src_lang_numbers_units[binding_src]
+            trg_pair = trg_lang_numbers_units[binding_trg]
+            suitable_unit = units.get_correct_unit(self.target_lang, src_pair.number, src_pair.unit, trg_pair.unit)
+            sentence = Replacer.replace_unit(sentence, trg_pair.text_part, trg_pair.number, trg_pair.unit, suitable_unit)
+
+        return sentence, [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT] if len(bindings) else []
+
+    def __process_sentence_different_number_same_unit(
+            self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        return sentence, [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] if len(bindings) else []
+
+    def __process_sentence_different_number_different_unit(
+            self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        return sentence, [StatisticsMarks.WRONG_NUMBER_UNIT] if len(bindings) else []
+
+    @staticmethod
+    def __process_src_trg_pairs_relationships(relationships: Dict[int, Relationship], level: int) -> List[Tuple[int, int]]:
+        results = []
+
+        while len(relationships):
+            some_change = False
+            to_remove = []
+
+            for trg_idx, target_sentence in relationships.items():
+                if len(target_sentence.get_list_by_level(level)) == 1:
+                    idx = target_sentence.get_list_by_level(level).pop()
+                    to_remove.append(trg_idx)
+                    results.append((trg_idx, idx))
+                    some_change = True
+                    [o.remove_src_sentence(idx) for _, o in relationships.items()]
+
+            [relationships.pop(idx) for idx in to_remove]
+
+            if not some_change:
+                break
+
+        to_remove = []
+        for trg_idx, target_sentence in relationships.items():
+            if len(target_sentence.get_list_by_level(level)):
+                idx = target_sentence.get_list_by_level(level).pop()
+                to_remove.append(trg_idx)
+                results.append((trg_idx, idx))
+                [o.remove_src_sentence(idx) for _, o in relationships.items()]
+        [relationships.pop(idx) for idx in to_remove]
+
+        return results
+
+    @staticmethod
+    def __prepare_src_trg_pairs_relationships(src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult]) -> Dict[int, Relationship]:
+        relationships = {}
+
+        for trg_idx, trg_pair in enumerate(trg_lang_numbers_units):
+
+            relationship = Relationship()
+
+            for idx, src_pair in enumerate(src_lang_numbers_units):
+
+                # same number, same unit
+                if src_pair.number == trg_pair.number and src_pair.unit.category == trg_pair.unit.category:
+                    relationship.same_number_same_unit.add(idx)
+
+                # same number, different unit
+                elif src_pair.number == trg_pair.number and src_pair.unit.category != trg_pair.unit.category:
+                    relationship.same_number_different_unit.add(idx)
+
+                # different number, same unit
+                elif src_pair.number != trg_pair.number and src_pair.unit.category == trg_pair.unit.category:
+                    relationship.different_number_same_unit.add(idx)
+
+                # different number, different unit
+                else:
+                    relationship.different_number_different_unit.add(idx)
+
+            relationships[trg_idx] = relationship
+
+        return relationships
+
+
+'''
     def __fix_sentence_multiple_units(self, numbers_units_pairs: List[Tuple[bool, Number, Unit]], original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
         """Main method for fixing sentences with multiple number-unit pairs.
 
@@ -150,7 +288,7 @@ class NumberFixer:
             # same number, different unit
             elif number == tr_number and unit.category != tr_unit.category:
                 wrong_units.append((tr_number, tr_unit, translated_part))
-                '''
+                
                 suitable_unit = units.get_correct_unit(self.target_lang, number, unit, tr_unit)
                 return translated_text.replace(tr_unit.word, suitable_unit.word), [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT]
                 converted_number, new_unit = units.convert_number(self.target_lang, UnitsSystem.Imperial, number, unit, tr_unit)
@@ -159,7 +297,7 @@ class NumberFixer:
                 else:
                     converted_number = round(converted_number, 2)
                 return translated_text.replace(translated_part, f"{converted_number} {new_unit.word}")
-                '''
+              
             # different number, same unit
             elif number != tr_number and unit.category == tr_unit.category:
                 wrong_number.append((tr_number, tr_unit, translated_part))
@@ -219,3 +357,4 @@ class NumberFixer:
         for idx, char in enumerate(text):
             if str.isalpha(char):
                 return text[:idx].strip()
+'''

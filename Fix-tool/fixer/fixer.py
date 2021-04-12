@@ -32,7 +32,9 @@ class Fixer:
             arguments.approximately,
             arguments.recalculate,
             source_lang,
-            target_lang)
+            target_lang,
+            0.1,
+            0.1)
 
         self.decimal_separator_fixer = DecimalSeparatorFixer(source_lang, target_lang)
 
