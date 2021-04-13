@@ -1,5 +1,4 @@
-from fixer._aligner import *
-
+from fixer._aligner import ExternalAligner, OrderAligner
 
 def test_get_external_alignment():
     src_text = "In 2016, 665 km of regional roads were in a state of emergency, with a further 313 kilometres identified as unsatisfactory."

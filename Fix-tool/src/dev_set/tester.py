@@ -4,7 +4,7 @@ from os.path import isfile, join
 
 from tabulate import tabulate
 
-from fixer.fixer import *
+from src.fixer import *
 
 devset_languages = ["cs-en", "en-cs"]
 

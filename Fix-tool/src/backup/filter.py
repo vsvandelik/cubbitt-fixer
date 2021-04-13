@@ -3,7 +3,8 @@
 import re
 import argparse
 
-from fixer import _digits_translation as dt, _units
+from src.fixer import _units
+from src.fixer import _digits_translation as dt
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file", help="Name of file to be checked")

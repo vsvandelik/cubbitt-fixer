@@ -1,6 +1,6 @@
-static_files/
+src/static_files/
 .idea/
-dev_set/test_report.txt
+src/dev_set/test_report.txt
 docs/_build/
 docs/_static/
 docs/_templates/

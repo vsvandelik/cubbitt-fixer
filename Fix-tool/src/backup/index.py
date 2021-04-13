@@ -1,6 +1,6 @@
 #!D:\python38\python.exe
 
-from fixer import Fixer
+from src.fixer import Fixer
 import cgi
 
 
