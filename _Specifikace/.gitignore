@@ -1,7 +1,0 @@
-# ignore all
-*
-
-# except
-!*.pdf
-!*.tex
-!.gitignore
