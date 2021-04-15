@@ -38,3 +38,9 @@ class Replacer:
             new_number_unit_part = f"{translated_number} {new_unit.word}"
 
         return sentence.replace(number_unit_part, new_number_unit_part)
+
+    @staticmethod
+    def replace_number(sentence: str, number_unit_part: str, number: str, new_number: str) -> str:
+        with_new_number = number_unit_part.replace(number, new_number)
+        return sentence.replace(number_unit_part, with_new_number)
+

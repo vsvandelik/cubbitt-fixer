@@ -68,6 +68,7 @@ class Languages:
         'millions': 1000000,
         'billion': 1000000000,
         'billions': 1000000000,
+        'bn': 1000000000,
         'trillion': 1000000000000,
         'trillions': 1000000000000,
         'quadrillion': 1000000000000000,

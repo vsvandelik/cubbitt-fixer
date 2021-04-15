@@ -6,6 +6,8 @@ from ._languages import Language
 from ._replacer import Replacer
 from ._statistics import StatisticsMarks
 from ._units import units
+from ._decimal_separator_fixer import DecimalSeparatorFixer
+from ._splitter import StringToNumberUnitConverter as Splitter
 
 
 class Relationship:
@@ -56,9 +58,9 @@ class NumberFixer:
 
         # preparing regex patterns based on supported units
         self.number_patter_source = re.compile(
-            rf"((?:{units.get_regex_units_for_language_before_numbers(source_lang)})\s?\d[\d .,]*(\s(?:{source_lang.big_numbers_scale_keys}))?|\d[\d .,]*[\s-]?((?:{source_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(source_lang)})\b|\d+\'\d+\")")
+            rf"((?:{units.get_regex_units_for_language_before_numbers(source_lang)})\s?\d[\d .,]*(?:{source_lang.big_numbers_scale_keys})?|\d[\d .,]*[\s-]?((?:{source_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(source_lang)})\b|\d+\'\d+\")")
         self.number_patter_target = re.compile(
-            rf"((?:{units.get_regex_units_for_language_before_numbers(target_lang)})\s?\d[\d .,]*(\s(?:{target_lang.big_numbers_scale_keys}))?|\d[\d .,]*[\s-]?((?:{target_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(target_lang)})\b|\d+\'\d+\")")
+            rf"((?:{units.get_regex_units_for_language_before_numbers(target_lang)})\s?\d[\d .,]*(?:{target_lang.big_numbers_scale_keys})?|\d[\d .,]*[\s-]?((?:{target_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(target_lang)})\b|\d+\'\d+\")")
 
         self.normal_inaccuracy = normal_inaccuracy
         self.approximately_inaccuracy_inaccuracy = approximately_inaccuracy
@@ -130,9 +132,25 @@ class NumberFixer:
 
         return sentence, [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT] if len(bindings) else []
 
-    def __process_sentence_different_number_same_unit(
-            self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
-        return sentence, [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] if len(bindings) else []
+    def __process_sentence_different_number_same_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        change = False
+
+        for binding_trg, binding_src in bindings:
+            src_pair = src_lang_numbers_units[binding_src]
+            trg_pair = trg_lang_numbers_units[binding_trg]
+            str_number = Splitter.extract_string_number_from_number_unit_string(src_pair.text_part)
+
+            idx_dec_sep = str_number.find(self.source_lang.decimal_separator)
+            idx_ths_sep = str_number.find(self.source_lang.thousands_separator)
+            if idx_dec_sep > -1 and idx_ths_sep > -1 and idx_dec_sep < idx_ths_sep:
+                continue
+
+            trg_number = Splitter.extract_string_number_from_number_unit_string(trg_pair.text_part)
+            swaped_separators = DecimalSeparatorFixer.swap_separators(str_number)
+            sentence = Replacer.replace_number(sentence, trg_pair.text_part, trg_number, swaped_separators)
+            change = True
+
+        return sentence, [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] if len(bindings) and change else []
 
     def __process_sentence_different_number_different_unit(
             self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:

@@ -1,6 +1,7 @@
 from typing import Tuple, List
 
 from ._custom_types import Number
+from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._languages import Language
 from ._units import Unit, units
 
@@ -36,10 +37,17 @@ class StringToNumberUnitConverter:
         else:
             number_string, decimal, unit = StringToNumberUnitConverter.__split_string_unit_first(text, custom_separator)
 
+        number_string = "".join(number_string)
+        """
+        idx_dec_sep = number_string.find(language.decimal_separator)
+        idx_ths_sep = number_string.find(language.thousands_separator)
+        if idx_dec_sep > -1 and idx_ths_sep > -1 and idx_dec_sep < idx_ths_sep:
+            number_string = DecimalSeparatorFixer.swap_separators(number_string)
+        """
         if decimal:
-            number = float("".join(number_string))
+            number = float(number_string)
         else:
-            number = int("".join(number_string))
+            number = int(number_string)
 
         unit = units.get_unit_by_word(unit, language)
 
@@ -84,6 +92,28 @@ class StringToNumberUnitConverter:
                 decimal = True
 
         return number_string, decimal, unit
+
+    @staticmethod
+    def extract_string_number_from_number_unit_string(text: str) -> str:
+        # fix of situation: "Back in 1892, 250 kilometres"
+        multiple_sentences_split = text.split(', ')
+        if len(multiple_sentences_split) > 1:
+            text = multiple_sentences_split[-1]
+
+        if not text[0].isdigit():
+            start = None
+            for idx, char in enumerate(text):
+                if not start and char.isdigit():
+                    start = idx
+                if start and char.isalpha():  # for eg. CZK 250 million -> get only 250
+                    return text[start:idx]
+
+            return text[start:]
+
+        else:
+            for idx, char in enumerate(text):
+                if char.isalpha():
+                    return text[:idx]
 
     @staticmethod
     def __convert_text_to_inches(text: str) -> int:

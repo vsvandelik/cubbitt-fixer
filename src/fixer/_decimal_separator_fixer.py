@@ -43,7 +43,7 @@ class DecimalSeparatorFixer:
 
             same_in_translation = re.search(DecimalSeparatorFixer.__prepare_re_patter_one_number(number, self.target_lang), translated_sentence)
             if same_in_translation:
-                translated_sentence = translated_sentence.replace(number, DecimalSeparatorFixer.__swap_separators(number))
+                translated_sentence = translated_sentence.replace(number, DecimalSeparatorFixer.swap_separators(number))
                 replaced += 1
 
         if replaced == 0:
@@ -75,7 +75,7 @@ class DecimalSeparatorFixer:
                           )
 
     @staticmethod
-    def __swap_separators(number: str) -> str:
+    def swap_separators(number: str) -> str:
         """Swap comma and dot"""
         number = number.replace(',', '<>')
         number = number.replace('.', ',')
