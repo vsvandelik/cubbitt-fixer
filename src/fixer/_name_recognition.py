@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 import requests
-from _languages import Languages, Language
+from ._languages import Languages, Language
 
 
 class NameRecognitionException(Exception):

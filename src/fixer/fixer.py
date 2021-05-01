@@ -1,9 +1,10 @@
 import argparse
 from typing import Union, List, Tuple
 
-from ._languages import Languages
-from ._numbers_fixer import NumberFixer
 from ._decimal_separator_fixer import DecimalSeparatorFixer
+from ._languages import Languages
+from ._names_fixer import NamesFixer
+from ._numbers_fixer import NumberFixer
 
 
 class Fixer:
@@ -37,6 +38,7 @@ class Fixer:
             0.1)
 
         self.decimal_separator_fixer = DecimalSeparatorFixer(source_lang, target_lang)
+        self.names_fixer = NamesFixer(source_lang, target_lang)
 
     def fix(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
         """Function to fix translation of one sentence based on Fixer attributes.
@@ -56,6 +58,8 @@ class Fixer:
         """
         decimal_repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
         translated_text = decimal_repair if isinstance(decimal_repair, str) else translated_text
+        names_repair, marks_names = self.names_fixer.fix(original_text, translated_text)
+        translated_text = names_repair if isinstance(names_repair, str) else translated_text
         repair, marks_numbers = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
 
         """
@@ -71,6 +75,8 @@ class Fixer:
             return False, []
         """
         if repair is True and isinstance(decimal_repair, str):
-            return decimal_repair, marks_numbers + marks_separators
+            return decimal_repair, marks_numbers + marks_names + marks_separators
+        elif repair is True and isinstance(names_repair, str):
+            return names_repair, marks_numbers + marks_names + marks_separators
         else:
-            return repair, marks_numbers + marks_separators
+            return repair, marks_numbers + marks_names + marks_separators

@@ -32,7 +32,7 @@ class AlignerInterface(ABC):
         pass
 
 
-class ExternalAligner(AlignerInterface):
+class FastAlignAligner(AlignerInterface):
     """Support class for communicating with the external aligner server.
 
     It uses predefined alignment server running at UFAL, MFF. The server uses
@@ -57,7 +57,7 @@ class ExternalAligner(AlignerInterface):
             'src_text': src_text,
             'trg_text': trg_text})
         headers = {'Content-type': 'application/json'}
-        response = requests.post(ExternalAligner._ALIGNER_URL, headers=headers, data=payload)
+        response = requests.post(FastAlignAligner._ALIGNER_URL, headers=headers, data=payload)
 
         if response.status_code != 200:
             raise AlignerException('Aligner was not able to connect to the alignment server.')
@@ -155,6 +155,6 @@ if __name__ == '__main__':
         source_text = parts[0]
         target_text = parts[1]
 
-        word_pairs = ExternalAligner.get_alignment(source_text, target_text)
+        word_pairs = FastAlignAligner.get_alignment(source_text, target_text)
         print(word_pairs)
         print(tabulate.tabulate(word_pairs, headers=['SRC', 'TRG']))

@@ -1,13 +1,13 @@
 import re
 from typing import Union, List, Tuple, Dict
 
+from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._finder import Finder, NumberUnitFinderResult
 from ._languages import Language
 from ._replacer import Replacer
+from ._splitter import StringToNumberUnitConverter as Splitter
 from ._statistics import StatisticsMarks
 from ._units import units
-from ._decimal_separator_fixer import DecimalSeparatorFixer
-from ._splitter import StringToNumberUnitConverter as Splitter
 
 
 class Relationship:
