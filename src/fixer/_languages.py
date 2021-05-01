@@ -38,11 +38,18 @@ class Languages:
 
     #: Instance of the czech language
     CS = Language('cs', ['cca', 'zhruba', 'přibližně', 'asi', 'asi tak'], ',', '.', {
+        'sto': 100,
+        'stě': 100,
+        'sta': 100,
+        'set': 100,
         'tisíce': 1000,
         'tisíc': 1000,
         'miliony': 1000000,
+        'milióny': 1000000,
         'milionů': 1000000,
+        'miliónů': 1000000,
         'milion': 1000000,
+        'milión': 1000000,
         'miliarda': 1000000000,
         'miliardy': 1000000000,
         'miliard': 1000000000,

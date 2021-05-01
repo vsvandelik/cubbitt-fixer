@@ -91,7 +91,18 @@ class NumberFixer:
             return True, []
 
         elif len(src_lang_numbers_units) != len(trg_lang_numbers_units):
-            return False, [StatisticsMarks.DIFFERENT_COUNT_NUMBERS_UNITS]
+            number_as_word_src = Finder.find_word_number_unit(original_text, self.source_lang)
+            if number_as_word_src:
+                marks += [StatisticsMarks.NUMBER_AS_WORD]
+                src_lang_numbers_units += number_as_word_src
+
+            number_as_word_trg = Finder.find_word_number_unit(translated_text, self.target_lang)
+            if number_as_word_trg:
+                marks += [StatisticsMarks.NUMBER_AS_WORD]
+                trg_lang_numbers_units += number_as_word_trg
+
+            if len(src_lang_numbers_units) != len(trg_lang_numbers_units):
+                marks += [StatisticsMarks.UNFIXABLE_PART]
 
         elif len(src_lang_numbers_units) == 1 and len(trg_lang_numbers_units) == 1:
             marks.append(StatisticsMarks.SINGLE_NUMBER_UNIT_SENTENCE)
@@ -138,15 +149,17 @@ class NumberFixer:
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
-            str_number = Splitter.extract_string_number_from_number_unit_string(src_pair.text_part)
 
-            idx_dec_sep = str_number.find(self.source_lang.decimal_separator)
-            idx_ths_sep = str_number.find(self.source_lang.thousands_separator)
+            src_number = str(src_pair.number) if src_pair.number_as_string else Splitter.extract_string_number_from_number_unit_string(src_pair.text_part)
+
+            idx_dec_sep = src_number.find(self.source_lang.decimal_separator)
+            idx_ths_sep = src_number.find(self.source_lang.thousands_separator)
             if idx_dec_sep > -1 and idx_ths_sep > -1 and idx_dec_sep < idx_ths_sep:
                 continue
 
-            trg_number = Splitter.extract_string_number_from_number_unit_string(trg_pair.text_part)
-            swaped_separators = DecimalSeparatorFixer.swap_separators(str_number)
+            trg_number = trg_pair.number_as_string if trg_pair.number_as_string else trg_pair.text_part.replace(trg_pair.unit.word, '').strip()
+
+            swaped_separators = DecimalSeparatorFixer.swap_separators(src_number)
             sentence = Replacer.replace_number(sentence, trg_pair.text_part, trg_number, swaped_separators)
             change = True
 

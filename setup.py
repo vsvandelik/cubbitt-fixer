@@ -15,4 +15,10 @@ setuptools.setup(
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.8",
+    install_requires=[
+        "conllu",
+        "requests",
+        "tabulate",
+        "word2number"
+    ]
 )
