@@ -1,14 +1,19 @@
-from enum import Enum
+from enum import Enum, auto
 from typing import Union, Optional, List
 
 from ._custom_types import Number
+from ._exchange_rates import exchange_rates_convertor
 from ._languages import Language, Languages
 
 
 class UnitsSystem(Enum):
-    SI = 0
-    Imperial = 1
-    USCustomary = 2
+    SI = auto()
+    Imperial = auto()
+    USCustomary = auto()
+    CZK = auto()
+    GBP = auto()
+    USD = auto()
+    EUR = auto()
 
 
 class UnitDialect(Enum):
@@ -31,7 +36,7 @@ class UnitsConvertors:
     def get_best_unit_for_converted_number(number: Number, category: UnitCategory, language: Language, original_unit, translated_unit):
         best_number, best_category = number, category
 
-        for category in units_categories[category]:
+        for category in units_categories_groups[category]:
 
             # there is no unit for given category
             if len(units.get_list_units_by_category_language()[language][category]) == 0:
@@ -79,6 +84,17 @@ class UnitsConvertors:
 
         return target_number, target_category
 
+    @staticmethod
+    def currency_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
+        currencies_system_categories = {
+            UnitsSystem.CZK: UnitCategories.CZK,
+            UnitsSystem.USD: UnitCategories.USD,
+            UnitsSystem.GBP: UnitCategories.GBP,
+            UnitsSystem.EUR: UnitCategories.EUR,
+        }
+        rate = exchange_rates_convertor.get_rate(original_category, currencies_system_categories[target_system], original_number)
+        return rate, currencies_system_categories[target_system]
+
 
 class UnitCategories:
     MS = UnitCategory([UnitsSystem.SI], None, None)
@@ -100,10 +116,10 @@ class UnitCategories:
     MI = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT, 5280)
     FT2 = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None, conversion=UnitsConvertors.area_convertor)
     MI2 = UnitCategory([UnitsSystem.Imperial, UnitsSystem.USCustomary], FT2, 27878400)
-    CZK = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    USD = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    GBP = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    EUR = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    CZK = UnitCategory([UnitsSystem.CZK], None, None, conversion=UnitsConvertors.currency_convertor)
+    USD = UnitCategory([UnitsSystem.USD], None, None, conversion=UnitsConvertors.currency_convertor)
+    GBP = UnitCategory([UnitsSystem.GBP], None, None, conversion=UnitsConvertors.currency_convertor)
+    EUR = UnitCategory([UnitsSystem.EUR], None, None, conversion=UnitsConvertors.currency_convertor)
     C = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
     F = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
 
@@ -128,7 +144,7 @@ class UnitCategories:
         return categories_groups
 
 
-units_categories = UnitCategories.get_categories_by_groups()
+units_categories_groups = UnitCategories.get_categories_by_groups()
 
 
 class Unit:

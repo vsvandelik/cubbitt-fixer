@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from datetime import date
 
 import requests
-from ._units import Unit, UnitCategories
+
+from ._units import Unit, UnitCategories, UnitCategory
 
 
 class CNBCommunicationException(Exception):
@@ -60,7 +61,7 @@ class CNBExchangeRates(ExchangeRatesInterface):
 
         return rates
 
-    def get_rate(self, original_currency: Unit, exchanged_currency: Unit, amount: float) -> float:
+    def get_rate(self, original_currency: UnitCategory, exchanged_currency: UnitCategory, amount: float) -> float:
         if original_currency == exchanged_currency:
             return amount
 
@@ -71,3 +72,6 @@ class CNBExchangeRates(ExchangeRatesInterface):
             amount /= self.rates[CNBExchangeRates._UNITS_CURRENCIES_TABLE[exchanged_currency]].rate
 
         return amount
+
+
+exchange_rates_convertor = CNBExchangeRates()
