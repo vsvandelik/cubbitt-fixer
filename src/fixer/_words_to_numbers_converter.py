@@ -1,11 +1,12 @@
-from ._languages import Languages, Language
-from ._custom_types import *
-from typing import List, Dict, Tuple
+from typing import List, Optional
 
 from word2number import w2n
 
-class WordsNumbersConverter:
+from ._custom_types import *
+from ._languages import Languages, Language
 
+
+class WordsNumbersConverter:
     __CS = {
         'nula': 0,
         'jedna': 1,
@@ -39,7 +40,7 @@ class WordsNumbersConverter:
     }
 
     @staticmethod
-    def convert(phrase: str, language: Language) -> Number:
+    def convert(phrase: List[str], language: Language) -> Optional[Number]:
         if language == Languages.CS:
             return WordsNumbersConverter.__cz_converter(phrase)
         elif language == Languages.EN:
@@ -52,15 +53,20 @@ class WordsNumbersConverter:
         sum = 0
 
         last_number = 0
+        previous_was_scaling = False
         for word in phrase:
             if word in WordsNumbersConverter.__CS.keys():
                 last_number += WordsNumbersConverter.__CS[word]
+                previous_was_scaling = False
             elif word in Languages.CS.big_numbers_scale.keys():
-                if last_number == 0:
+                if previous_was_scaling:
+                    sum *= Languages.CS.big_numbers_scale[word]
+                elif last_number == 0:
                     sum += Languages.CS.big_numbers_scale[word]
                 else:
                     sum += last_number * Languages.CS.big_numbers_scale[word]
                 last_number = 0
+                previous_was_scaling = True
 
         if last_number > 0:
             sum += last_number
@@ -70,6 +76,7 @@ class WordsNumbersConverter:
     @staticmethod
     def __en_converter(phrase: List[str]) -> Number:
         return w2n.word_to_num(" ".join(phrase))
+
 
 if __name__ == "__main__":
     print(WordsNumbersConverter.convert(["two", "million", "three", "thousand", "nine", "hundred", "and", "eighty", "four"], Languages.EN))

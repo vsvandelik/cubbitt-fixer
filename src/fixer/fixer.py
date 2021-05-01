@@ -54,10 +54,11 @@ class Fixer:
                 - `true` is there was found no problem
             - list with flags labeling the sentence and the correction
         """
-        """decimal_repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
+        decimal_repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
         translated_text = decimal_repair if isinstance(decimal_repair, str) else translated_text
         repair, marks_numbers = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
-"""
+
+        """
         try:
             decimal_repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
             translated_text = decimal_repair if isinstance(decimal_repair, str) else translated_text
@@ -68,7 +69,7 @@ class Fixer:
             print(translated_text)
             print()
             return False, []
-
+        """
         if repair is True and isinstance(decimal_repair, str):
             return decimal_repair, marks_numbers + marks_separators
         else:

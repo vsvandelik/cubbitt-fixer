@@ -1,12 +1,14 @@
 import re
 from typing import List
 
+from fixer._words_to_numbers_converter import WordsNumbersConverter
+
 from ._custom_types import *
 from ._languages import Language
+from ._lemmatization import UDPipeApi
 from ._splitter import StringToNumberUnitConverter as Splitter
 from ._units import Unit, units
-from ._lemmatization import UDPipeApi
-from ._words_to_numbers_converter import WordsNumbersConverter
+
 
 class NumberUnitFinderResult:
 
@@ -24,6 +26,14 @@ class NumberUnitFinderResult:
 
     def set_number_as_string(self, word_number):
         self.number_as_string = word_number
+
+
+class TextNumberPhrase:
+
+    def __init__(self):
+        self.unit = None
+        self.unit_before_number = None
+        self.number_parts = []
 
 
 class Finder:
@@ -85,10 +95,10 @@ class Finder:
 
         #  Concantenate numbers as words together next to each other
         for data in word_numbers:
-            if data['word'][0].isdigit():
-                continue
-            elif data['upostag'] != 'NUM' and data['lemma'] not in language.big_numbers_scale.keys() and not (data['upostag'] == 'PUNC' and inside_number_phrase):
+            if data['upostag'] != 'NUM' and data['lemma'] not in language.big_numbers_scale.keys() and not (data['upostag'] == 'PUNC' and inside_number_phrase):
                 if current_phrase:
+                    if current_phrase[-1]['upostag'] == 'PUNC':
+                        current_phrase.pop()
                     values.append(current_phrase)
                     current_phrase = []
                 inside_number_phrase = False
@@ -101,32 +111,51 @@ class Finder:
             elif data['rangeStart'] <= last_end + 1:
                 current_phrase.append(data)
             else:
+                if current_phrase[-1]['upostag'] == 'PUNC':
+                    current_phrase.pop()
                 values.append(current_phrase)
                 current_phrase = [data]
 
             last_end = data['rangeEnd']
 
         if current_phrase:
+            if current_phrase[-1]['upostag'] == 'PUNC':
+                current_phrase.pop()
             values.append(current_phrase)
 
         found_number_units = []
 
-        #  Convert to number and found out unit
         for phrase in values:
-            sentence_part = sentence[phrase[0]['rangeStart']:phrase[-1]['rangeEnd']]
-            results = re.findall(rf"(({units.get_regex_units_for_language_before_numbers(language)})\s?{sentence_part})|[a-zA-Z,.][\s-]?({sentence_part}[\s-]?({units.get_regex_units_for_language(language)})\b)", sentence)
-            for result in results:
-                whole_match = result[0] if result[0] else result[2]
+            if len(phrase) == 1 and phrase[0]['word'][0].isdigit():
+                continue
+            elif phrase[0]['word'][0].isdigit() and phrase[1]['word'] in language.big_numbers_scale.keys():
+                continue
 
-                # search for some approximately word before the number
-                approximately = False
-                if re.search(f"({'|'.join(language.approximately_phrases)}) {whole_match}", sentence):
-                    approximately = True
+            start = phrase[0]['rangeStart']
+            end = phrase[-1]['rangeEnd']
+            matched_unit = None
+            whole_match = None
+            for unit in re.finditer(rf"{units.get_regex_units_for_language(language)}", sentence):
+                if unit.group(0).strip() in units.get_regex_units_for_language_before_numbers_list(language) and 0 <= (start - unit.end()) <= 2:
+                    matched_unit = unit.group(0)
+                    whole_match = sentence[unit.start():end]
+                    break
+                elif 0 <= (unit.start() - end) <= 2:
+                    matched_unit = unit.group(0)
+                    whole_match = sentence[start:unit.end()]
+                    break
 
-                number = WordsNumbersConverter.convert([data['lemma'] for data in phrase if data['upostag'] != 'PUNC'], language)
-                unit = result[1] if result[1] else result[3]
+            if not matched_unit:
+                continue
 
-                found_number_units.append(NumberUnitFinderResult(number, units.get_unit_by_word(unit, language), approximately, whole_match))
-                found_number_units[-1].set_number_as_string(sentence_part)
+            # search for some approximately word before the number
+            approximately = False
+            if re.search(f"({'|'.join(language.approximately_phrases)}) {whole_match}", sentence):
+                approximately = True
+
+            number = WordsNumbersConverter.convert([data['lemma'] for data in phrase if data['upostag'] != 'PUNC'], language)
+
+            found_number_units.append(NumberUnitFinderResult(number, units.get_unit_by_word(matched_unit, language), approximately, whole_match))
+            found_number_units[-1].set_number_as_string(sentence[start:end + 1])
 
         return found_number_units

@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Union, Optional, List
 
-from ._languages import Language, Languages
 from ._custom_types import Number
+from ._languages import Language, Languages
 
 
 class UnitsSystem(Enum):
@@ -282,6 +282,11 @@ class UnitsWrapper:
         pattern = '<!>' if pattern == '' else pattern
 
         return pattern.replace('$', '\$')
+
+    def get_regex_units_for_language_before_numbers_list(self, language: Language) -> List[Unit]:
+        units_for_language = self.get_all_units_for_language(language)
+
+        return [unit.word for unit in units_for_language if unit.before_number is True]
 
     def get_all_units_for_language(self, language: Language) -> List[Unit]:
         if language not in self.__units_by_languages.keys():

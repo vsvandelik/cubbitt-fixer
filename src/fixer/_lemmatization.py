@@ -50,6 +50,8 @@ class UDPipeApi(LemmatizationInterface):
         parsed_response = json.loads(response.content)
         for sentence in parse(parsed_response['result']):
             for token in sentence.filter(upostag="NUM") if only_numbers else sentence:
+                if not token['misc']:
+                    continue
                 tokenStart, tokenEnd = token['misc']['TokenRange'].split(':')
                 lemmas.append({
                     'upostag': token['upos'],
