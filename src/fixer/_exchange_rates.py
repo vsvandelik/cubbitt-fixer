@@ -3,8 +3,6 @@ from datetime import date
 
 import requests
 
-from ._units import Unit, UnitCategories, UnitCategory
-
 
 class CNBCommunicationException(Exception):
     pass
@@ -13,7 +11,7 @@ class CNBCommunicationException(Exception):
 class ExchangeRatesInterface(ABC):
 
     @abstractmethod
-    def get_rate(self, original_currency: Unit, exchanged_currency: Unit, amount: float) -> float:
+    def get_rate(self, original_currency: str, exchanged_currency: str, amount: float) -> float:
         pass
 
 
@@ -25,12 +23,7 @@ class Rate:
 
 class CNBExchangeRates(ExchangeRatesInterface):
     _CNB_API_RATES = "https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/kurzy-devizoveho-trhu/denni_kurz.txt"
-    _UNITS_CURRENCIES_TABLE = {
-        UnitCategories.CZK: 'CZK',
-        UnitCategories.GBP: 'GBP',
-        UnitCategories.EUR: 'EUR',
-        UnitCategories.USD: 'USD'
-    }
+    _UNITS_CURRENCIES = ['CZK', 'GBP', 'EUR', 'USD']
 
     def __init__(self, predefined_rates=None):
         self.rates = CNBExchangeRates.load_rates()
@@ -52,7 +45,7 @@ class CNBExchangeRates(ExchangeRatesInterface):
 
         for line in response.text.splitlines()[2:]:
             _, _, amount, abbr, rate = line.split('|')
-            if abbr in CNBExchangeRates._UNITS_CURRENCIES_TABLE.values():
+            if abbr in CNBExchangeRates._UNITS_CURRENCIES:
                 amount = int(amount)
                 rate = float(rate.replace(',', '.'))
                 if amount != 1:
@@ -61,15 +54,15 @@ class CNBExchangeRates(ExchangeRatesInterface):
 
         return rates
 
-    def get_rate(self, original_currency: UnitCategory, exchanged_currency: UnitCategory, amount: float) -> float:
+    def get_rate(self, original_currency: str, exchanged_currency: str, amount: float) -> float:
         if original_currency == exchanged_currency:
             return amount
 
-        if original_currency != UnitCategories.CZK:
-            amount *= self.rates[CNBExchangeRates._UNITS_CURRENCIES_TABLE[original_currency]].rate
+        if original_currency != 'CZK':
+            amount *= self.rates[original_currency].rate
 
-        if exchanged_currency != UnitCategories.CZK:
-            amount /= self.rates[CNBExchangeRates._UNITS_CURRENCIES_TABLE[exchanged_currency]].rate
+        if exchanged_currency != 'CZK':
+            amount /= self.rates[exchanged_currency].rate
 
         return amount
 
