@@ -35,10 +35,10 @@ class UDPipeApi(LemmatizationInterface):
     _UDPIPE_URL = "http://lindat.mff.cuni.cz/services/udpipe/api/process"
 
     @staticmethod
-    def get_lemmatization(src_text: str, languge: Language, only_numbers=True) -> List[dict]:
+    def get_lemmatization(src_text: str, language: Language, only_numbers=True) -> List[dict]:
         """Get pairs of words and its lemmas in given language."""
 
-        model = "&model=en" if languge is not Languages.CS else ""
+        model = "&model=en" if language is not Languages.CS else ""
         complete_url = "{}?tokenizer=ranges&tagger&parser{}&data={}".format(UDPipeApi._UDPIPE_URL, model, src_text)
         response = requests.get(complete_url)
 
@@ -52,13 +52,13 @@ class UDPipeApi(LemmatizationInterface):
             for token in sentence.filter(upostag="NUM") if only_numbers else sentence:
                 if not token['misc']:
                     continue
-                tokenStart, tokenEnd = token['misc']['TokenRange'].split(':')
+                token_start, token_end = token['misc']['TokenRange'].split(':')
                 lemmas.append({
                     'upostag': token['upos'],
                     'word': token['form'],
                     'lemma': token['lemma'],
-                    'rangeStart': int(tokenStart),
-                    'rangeEnd': int(tokenEnd)
+                    'rangeStart': int(token_start),
+                    'rangeEnd': int(token_end)
                 })
 
         return lemmas
