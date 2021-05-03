@@ -3,8 +3,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, List
 
 import requests
-from ._languages import Language, Languages
 from conllu import parse
+
+from ._languages import Language, Languages
 
 
 class LemmatizationException(Exception):
@@ -62,3 +63,9 @@ class UDPipeApi(LemmatizationInterface):
                 })
 
         return lemmas
+
+
+def get_lemmatizators_list():
+    return {
+        'udpipe': UDPipeApi
+    }

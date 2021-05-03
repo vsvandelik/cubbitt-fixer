@@ -1,0 +1,13 @@
+source_lang: cs
+target_lang: en
+aligner: fast_align # [fast_align|order_based]
+lemmatizator: udpipe # [udpipe]
+names_tagger: nametag # [nametag]
+mode: recalculating # [fixing|recalculating]
+base_tolerance: 0.1 # [0 - 1]
+approximately_tolerance: 0.2 # [0 - 1]
+target_units:
+    - Imperial # [Imperial|SI]
+    - USD # [CZK|USD|GBP|EUR]
+    - F # [C|F]
+exchange_rates: cnb # [cnb|*list of rates - USD, EUR, GBP*]

@@ -1,11 +1,9 @@
 import json
 import re
-import sys
 from abc import ABC, abstractmethod
 from typing import Tuple, List
 
 import requests
-import tabulate
 
 from ._languages import Language, Languages
 from ._units import units
@@ -146,15 +144,8 @@ class OrderAligner(AlignerInterface):
         return output_tokens
 
 
-if __name__ == '__main__':
-    for line in sys.stdin.readlines():
-        if line == '':
-            continue
-
-        parts = line.split('\t')
-        source_text = parts[0]
-        target_text = parts[1]
-
-        word_pairs = FastAlignAligner.get_alignment(source_text, target_text)
-        print(word_pairs)
-        print(tabulate.tabulate(word_pairs, headers=['SRC', 'TRG']))
+def get_aligners_list():
+    return {
+        'fast_align': FastAlignAligner,
+        'order_based': OrderAligner,
+    }

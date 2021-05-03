@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 import requests
+
 from ._languages import Languages, Language
 
 
@@ -70,6 +71,7 @@ class NameTagApi(NameRecognitionInterface):
         return cleaned_names
 
 
-if __name__ == "__main__":
-    print(NameTagApi.get_names("Veronika Stýblová vážila o 20 kilo víc.", Languages.CS))
-    print(NameTagApi.get_names("Veronica Bean weighed 20 pounds more.", Languages.EN))
+def get_names_tagger_list():
+    return {
+        'nametag': NameTagApi
+    }

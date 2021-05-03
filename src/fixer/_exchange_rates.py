@@ -50,7 +50,7 @@ class CNBExchangeRates(ExchangeRatesInterface):
                 rate = float(rate.replace(',', '.'))
                 if amount != 1:
                     rate /= amount
-                rates[abbr] = Rate(abbr, rate)
+                rates[abbr] = rate
 
         return rates
 
@@ -59,12 +59,22 @@ class CNBExchangeRates(ExchangeRatesInterface):
             return amount
 
         if original_currency != 'CZK':
-            amount *= self.rates[original_currency].rate
+            amount *= self.rates[original_currency]
 
         if exchanged_currency != 'CZK':
-            amount /= self.rates[exchanged_currency].rate
+            amount /= self.rates[exchanged_currency]
 
         return amount
 
 
 exchange_rates_convertor = CNBExchangeRates()
+
+
+def get_exchange_rates_convertors_list():
+    return {
+        'cnb': CNBExchangeRates
+    }
+
+
+def get_default_exchnage_rates_convertor():
+    return 'cnb'

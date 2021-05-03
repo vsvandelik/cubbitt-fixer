@@ -19,6 +19,7 @@ setuptools.setup(
         "conllu",
         "requests",
         "tabulate",
-        "word2number"
+        "word2number",
+        "pyyaml"
     ]
 )

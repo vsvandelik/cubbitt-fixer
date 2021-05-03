@@ -14,6 +14,8 @@ class UnitsSystem(Enum):
     GBP = auto()
     USD = auto()
     EUR = auto()
+    C = auto()
+    F = auto()
 
 
 class UnitDialect(Enum):
@@ -120,8 +122,8 @@ class UnitCategories:
     USD = UnitCategory([UnitsSystem.USD], None, None, conversion=UnitsConvertors.currency_convertor)
     GBP = UnitCategory([UnitsSystem.GBP], None, None, conversion=UnitsConvertors.currency_convertor)
     EUR = UnitCategory([UnitsSystem.EUR], None, None, conversion=UnitsConvertors.currency_convertor)
-    C = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
-    F = UnitCategory([UnitsSystem.SI, UnitsSystem.Imperial, UnitsSystem.USCustomary], None, None)
+    C = UnitCategory([UnitsSystem.C], None, None)
+    F = UnitCategory([UnitsSystem.F], None, None)
 
     @staticmethod
     def get_categories_by_groups():

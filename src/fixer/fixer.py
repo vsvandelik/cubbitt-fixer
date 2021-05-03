@@ -56,13 +56,14 @@ class Fixer:
                 - `true` is there was found no problem
             - list with flags labeling the sentence and the correction
         """
-        decimal_repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
-        translated_text = decimal_repair if isinstance(decimal_repair, str) else translated_text
-        names_repair, marks_names = self.names_fixer.fix(original_text, translated_text)
-        translated_text = names_repair if isinstance(names_repair, str) else translated_text
-        repair, marks_numbers = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
+        marks_separators = marks_names = marks_numbers = []
 
-        """
+        # decimal_repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
+        # translated_text = decimal_repair if isinstance(decimal_repair, str) else translated_text
+        # names_repair, marks_names = self.names_fixer.fix(original_text, translated_text)
+        # translated_text = names_repair if isinstance(names_repair, str) else translated_text
+        # repair, marks_numbers = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
+
         try:
             decimal_repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
             translated_text = decimal_repair if isinstance(decimal_repair, str) else translated_text
@@ -73,10 +74,10 @@ class Fixer:
             print(translated_text)
             print()
             return False, []
-        """
+
         if repair is True and isinstance(decimal_repair, str):
             return decimal_repair, marks_numbers + marks_names + marks_separators
-        elif repair is True and isinstance(names_repair, str):
-            return names_repair, marks_numbers + marks_names + marks_separators
+        # elif repair is True and isinstance(names_repair, str):
+        #     return names_repair, marks_numbers + marks_names + marks_separators
         else:
             return repair, marks_numbers + marks_names + marks_separators

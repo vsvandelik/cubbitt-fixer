@@ -1,3 +1,4 @@
-__all__ = ['Fixer']
+__all__ = ['Fixer', 'FixerConfigurator']
 
+from fixer.fixer_configurator import FixerConfigurator
 from fixer.fixer import Fixer
