@@ -58,21 +58,21 @@ class FixerConfigurator:
     def load_from_file(self, filename: str):
         with open(filename, 'r', encoding='utf-8') as config_file:
             config = yaml.load(config_file, Loader=yaml.SafeLoader)
+            self.load_from_dict(config)
 
-            self.source_lang = self.get_language(config, 'source_lang')
-            self.target_lang = self.get_language(config, 'source_lang')
+    def load_from_dict(self, config: dict):
+        self.source_lang = self.get_language(config, 'source_lang')
+        self.target_lang = self.get_language(config, 'source_lang')
 
-            self.aligner = self.verify_and_get_instance(get_aligners_list(), config, 'aligner')
-            self.lemmatizator = self.verify_and_get_instance(get_lemmatizators_list(), config, 'lemmatizator')
-            self.names_tagger = self.verify_and_get_instance(get_names_tagger_list(), config, 'names_tagger')
-            self.mode = self.verify_and_get_instance({'fixing': FixerModes.FIXING, 'recalculating': FixerModes.RECALCULATING}, config, 'mode')
-            self.base_tolerance = self.verify_number_interval(0, 1, config, 'base_tolerance')
-            self.approximately_tolerance = self.verify_number_interval(0, 1, config, 'approximately_tolerance')
+        self.aligner = self.verify_and_get_instance(get_aligners_list(), config, 'aligner')
+        self.lemmatizator = self.verify_and_get_instance(get_lemmatizators_list(), config, 'lemmatizator')
+        self.names_tagger = self.verify_and_get_instance(get_names_tagger_list(), config, 'names_tagger')
+        self.mode = self.verify_and_get_instance({'fixing': FixerModes.FIXING, 'recalculating': FixerModes.RECALCULATING}, config, 'mode')
+        self.base_tolerance = self.verify_number_interval(0, 1, config, 'base_tolerance')
+        self.approximately_tolerance = self.verify_number_interval(0, 1, config, 'approximately_tolerance')
 
-            self.target_units = self.get_units_systems_by_names(config, 'target_units')
-            self.exchange_rates = self.get_exchange_rates(config, 'exchange_rates')
-
-            print(self.exchange_rates.get_rate('USD', 'CZK', 1))
+        self.target_units = self.get_units_systems_by_names(config, 'target_units')
+        self.exchange_rates = self.get_exchange_rates(config, 'exchange_rates')
 
     @staticmethod
     def verify_and_get_instance(instances: dict, config: dict, config_option: str):

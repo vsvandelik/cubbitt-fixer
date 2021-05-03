@@ -1,25 +1,21 @@
 import argparse
 
-from fixer import Fixer
+from fixer import Fixer, FixerConfigurator
 from fixer._statistics import StatisticsMarks
 from tabulate import tabulate
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file", help="Name of file to be checked")
-parser.add_argument("source_lang", help="Label of source language of file (sentences on left)")
-parser.add_argument("target_lang", help="Label of translated language of file (sentences on right)")
-
-parser.add_argument("--approximately", action="store_true", default=False,
-                    help="Whenever the numbers need to be precise")
-parser.add_argument("--recalculate", action="store_true", default=False,
-                    help="Whenever the numbers should be recalculated to new units")
-
+parser.add_argument("config", help="Path to the configuration file")
 parser.add_argument("--limit", default=100000, type=int, help="Count of sentences to be checked")
 parser.add_argument("--offset", default=0, type=int, help="Offset of sentences to be checked")
 
 
 def main(args):
-    fixer = Fixer(args)
+    configuration = FixerConfigurator()
+    configuration.load_from_file(args.config)
+
+    fixer = Fixer(configuration)
     statistics = {mark.value: 0 for mark in StatisticsMarks}
 
     with open(args.file, "r", encoding="utf8") as input_file:

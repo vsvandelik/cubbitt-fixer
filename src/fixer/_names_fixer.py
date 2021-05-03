@@ -1,15 +1,18 @@
 from typing import Union, Tuple, List
 
 from ._aligner import FastAlignAligner
-from ._languages import Language, Languages
+from ._languages import Languages
 from ._name_recognition import NameTagApi
+from .fixer_configurator import FixerConfigurator
 
 
 class NamesFixer:
 
-    def __init__(self, source_lang: Language, target_lang: Language):
-        self.source_lang = source_lang
-        self.target_lang = target_lang
+    def __init__(self, configuration: FixerConfigurator):
+        self.configuration = configuration
+
+        self.source_lang = configuration.source_lang
+        self.target_lang = configuration.target_lang
 
     def fix(self, original_sentence: str, translated_sentence: str) -> Tuple[Union[str, bool], List]:
         names_original_sentence = NameTagApi.get_names(original_sentence, self.source_lang)

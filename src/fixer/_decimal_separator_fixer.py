@@ -3,6 +3,7 @@ from typing import Union, List, Tuple
 
 from ._languages import Language
 from ._statistics import StatisticsMarks
+from .fixer_configurator import FixerConfigurator
 
 
 class DecimalSeparatorFixer:
@@ -12,17 +13,16 @@ class DecimalSeparatorFixer:
     from source language from target language because the separator
     is different in individual languages (eg. in czech is used '.' for
     thousands and ',' for decimal numbers, in english it is the opposite).
-
-    :param source_lang: instance of language of original sentence
-    :param target_lang: instance of language of translated sentence
     """
 
-    def __init__(self, source_lang: Language, target_lang: Language):
-        self.source_lang = source_lang
-        self.target_lang = target_lang
+    def __init__(self, configuration: FixerConfigurator):
+        self.configuration = configuration
 
-        self.source_pattern = DecimalSeparatorFixer.__prepare_re_pattern_all_numbers(source_lang)
-        self.target_pattern = DecimalSeparatorFixer.__prepare_re_pattern_all_numbers(target_lang)
+        self.source_lang = configuration.source_lang
+        self.target_lang = configuration.target_lang
+
+        self.source_pattern = DecimalSeparatorFixer.__prepare_re_pattern_all_numbers(self.source_lang)
+        self.target_pattern = DecimalSeparatorFixer.__prepare_re_pattern_all_numbers(self.target_lang)
 
     def fix(self, original_sentence: str, translated_sentence: str) -> Tuple[Union[str, bool], List]:
         """It verifies whenever the sentence contains problem and tries to fix it

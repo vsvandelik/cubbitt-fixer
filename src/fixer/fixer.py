@@ -1,10 +1,9 @@
-import argparse
 from typing import Union, List, Tuple
 
 from ._decimal_separator_fixer import DecimalSeparatorFixer
-from ._languages import Languages
 from ._names_fixer import NamesFixer
 from ._numbers_fixer import NumberFixer
+from .fixer_configurator import FixerConfigurator
 
 
 class Fixer:
@@ -19,26 +18,13 @@ class Fixer:
       - `recalculate` - flag whenever it should change correct units into different ones
 
     :param arguments: object with arguments values
-    :type arguments: argparse object
     """
 
-    def __init__(self, arguments: argparse):
-        source_lang = Languages.get_language(arguments.source_lang)
-        target_lang = Languages.get_language(arguments.target_lang)
+    def __init__(self, configuration: FixerConfigurator):
+        self.numbers_fixer = NumberFixer(configuration)
 
-        # TODO: More complex arguments (considering desired dialect of units and recalculationg mode)
-        # TODO: Exception when languages is not valid
-
-        self.numbers_fixer = NumberFixer(
-            arguments.approximately,
-            arguments.recalculate,
-            source_lang,
-            target_lang,
-            0.1,
-            0.1)
-
-        self.decimal_separator_fixer = DecimalSeparatorFixer(source_lang, target_lang)
-        self.names_fixer = NamesFixer(source_lang, target_lang)
+        self.decimal_separator_fixer = DecimalSeparatorFixer(configuration)
+        self.names_fixer = NamesFixer(configuration)
 
     def fix(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
         """Function to fix translation of one sentence based on Fixer attributes.
