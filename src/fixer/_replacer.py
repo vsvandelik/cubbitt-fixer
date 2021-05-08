@@ -1,4 +1,5 @@
 from ._custom_types import *
+from ._finder import NumberUnitFinderResult
 from ._units import Unit
 
 
@@ -43,3 +44,19 @@ class Replacer:
     def replace_number(sentence: str, number_unit_part: str, number: str, new_number: str) -> str:
         with_new_number = number_unit_part.replace(number, new_number)
         return sentence.replace(number_unit_part, with_new_number)
+
+    @staticmethod
+    def replace_unit_number(sentence: str, original_number_unit: NumberUnitFinderResult, new_number: Number, new_unit: Unit) -> str:
+        # TODO: Adding scaling
+
+        if isinstance(original_number_unit.number, int):
+            new_number = round(new_number)
+        else:
+            new_number = round(new_number, 2)
+
+        if new_unit.before_number:
+            replacement = new_unit.word + (" " if len(new_unit.word) > 1 else "") + str(new_number)
+        else:
+            replacement = str(new_number) + " " + new_unit.word
+
+        return sentence.replace(original_number_unit.text_part, replacement)

@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Tuple
 
 from ._custom_types import Number
 from ._exchange_rates import exchange_rates_convertor
@@ -38,6 +38,9 @@ class UnitsConvertors:
     def get_best_unit_for_converted_number(number: Number, category: UnitCategory, language: Language, original_unit, translated_unit):
         best_number, best_category = number, category
 
+        if category == translated_unit.category:
+            return number, translated_unit
+
         for category in units_categories_groups[category]:
 
             # there is no unit for given category
@@ -55,34 +58,43 @@ class UnitsConvertors:
 
     @staticmethod
     def length_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
-        if UnitsSystem.SI in original_category.system:
+        if UnitsSystem.SI in original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number / 0.3048
             target_category = UnitCategories.FT
-        else:
+        elif UnitsSystem.IMPERIAL in original_category.system and UnitsSystem.SI in target_system:
             target_number = original_number * 0.3048
             target_category = UnitCategories.M
+        else:
+            target_number = original_number
+            target_category = original_category
 
         return target_number, target_category
 
     @staticmethod
     def weight_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
-        if UnitsSystem.SI in original_category.system:
+        if UnitsSystem.SI in original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number / 453.59237
             target_category = UnitCategories.LB
-        else:
+        elif UnitsSystem.IMPERIAL in original_category.system and UnitsSystem.SI in target_system:
             target_number = original_number * 453.59237
             target_category = UnitCategories.G
+        else:
+            target_number = original_number
+            target_category = original_category
 
         return target_number, target_category
 
     @staticmethod
     def area_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
-        if UnitsSystem.SI in original_category.system:
+        if UnitsSystem.SI in original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number * 10.764
             target_category = UnitCategories.FT2
-        else:
+        elif UnitsSystem.IMPERIAL in original_category.system and UnitsSystem.SI in target_system:
             target_number = original_number / 10.764
             target_category = UnitCategories.M2
+        else:
+            target_number = original_number
+            target_category = original_category
 
         return target_number, target_category
 
@@ -94,8 +106,30 @@ class UnitsConvertors:
             UnitsSystem.GBP: UnitCategories.GBP,
             UnitsSystem.EUR: UnitCategories.EUR,
         }
-        rate = exchange_rates_convertor.get_rate(original_category, currencies_system_categories[target_system], original_number)
-        return rate, currencies_system_categories[target_system]
+
+        target_category = original_category
+
+        for system, category in currencies_system_categories.items():
+            if system in target_system:
+                target_category = category
+                break
+
+        rate = exchange_rates_convertor.get_rate(original_category, target_category, original_number)
+        return rate, target_category
+
+    @staticmethod
+    def temperature_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
+        if UnitsSystem.C in original_category.system and UnitsSystem.F in target_system:
+            target_number = original_number * 1.8 + 32
+            target_category = UnitCategories.F
+        elif UnitsSystem.F in original_category.system and UnitsSystem.C in target_system:
+            target_number = (original_number - 32) / 1.8
+            target_category = UnitCategories.C
+        else:
+            target_number = original_number
+            target_category = original_category
+
+        return target_number, target_category
 
 
 class UnitCategories:
@@ -122,8 +156,8 @@ class UnitCategories:
     USD = UnitCategory([UnitsSystem.USD], None, None, conversion=UnitsConvertors.currency_convertor)
     GBP = UnitCategory([UnitsSystem.GBP], None, None, conversion=UnitsConvertors.currency_convertor)
     EUR = UnitCategory([UnitsSystem.EUR], None, None, conversion=UnitsConvertors.currency_convertor)
-    C = UnitCategory([UnitsSystem.C], None, None)
-    F = UnitCategory([UnitsSystem.F], None, None)
+    C = UnitCategory([UnitsSystem.C], None, None,  conversion=UnitsConvertors.temperature_convertor)
+    F = UnitCategory([UnitsSystem.F], None, None,  conversion=UnitsConvertors.currency_convertor)
 
     @staticmethod
     def get_categories_by_groups():
@@ -238,14 +272,14 @@ class UnitsWrapper:
         options_list.sort(key=lambda tup: tup[0], reverse=True)
         return options_list[0][1]
 
-    def convert_number(self, target_language: Language, target_unit_system: UnitsSystem, actual_number: Number, original_unit: Unit, translated_unit: Unit):
+    def convert_number(self, target_language: Language, target_unit_system: List[UnitsSystem], actual_number: Number, original_unit: Unit, translated_unit: Unit) -> Tuple[Optional[Number], Optional[Unit]]:
         actual_category = original_unit.category
         if actual_category.base:
             actual_number = actual_number * original_unit.category.base_coefficient
             actual_category = original_unit.category.base
 
         if not actual_category.conversion:
-            return False
+            return None, None
 
         converted_number, converted_category = actual_category.conversion(actual_number, actual_category, target_unit_system)
         converted_number, converted_unit = UnitsConvertors.get_best_unit_for_converted_number(converted_number, converted_category, target_language, original_unit, translated_unit)

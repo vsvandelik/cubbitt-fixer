@@ -15,3 +15,5 @@ class StatisticsMarks(Enum):
     NUMBER_AS_WORD = auto()
     UNFIXABLE_PART = auto()
     EXCEPTION_CATCH = auto()
+    UNABLE_TO_RECALCULATE = auto()
+    RECALCULATED = auto()

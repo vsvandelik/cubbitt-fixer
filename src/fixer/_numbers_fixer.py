@@ -7,7 +7,7 @@ from ._replacer import Replacer
 from ._splitter import StringToNumberUnitConverter as Splitter
 from ._statistics import StatisticsMarks
 from ._units import units
-from .fixer_configurator import FixerConfigurator
+from .fixer_configurator import FixerConfigurator, FixerModes
 
 
 class Relationship:
@@ -123,14 +123,31 @@ class NumberFixer:
             return result_sentence, marks
 
     def __process_sentence_same_number_same_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
-        return sentence, [StatisticsMarks.CORRECT_NUMBER_UNIT] if len(bindings) else []
+        if self.configuration.mode == FixerModes.FIXING:
+            return sentence, [StatisticsMarks.CORRECT_NUMBER_UNIT] if len(bindings) else []
+
+        for binding_trg, binding_src in bindings:
+            src_pair = src_lang_numbers_units[binding_src]
+            trg_pair = trg_lang_numbers_units[binding_trg]
+            converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
+            if not converted_unit or not converted_unit:
+                return sentence, [StatisticsMarks.UNABLE_TO_RECALCULATE]
+            sentence = Replacer.replace_unit_number(sentence, trg_pair, converted_number, converted_unit)
+
+        return sentence, [StatisticsMarks.RECALCULATED] if len(bindings) else []
 
     def __process_sentence_same_number_different_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
-            suitable_unit = units.get_correct_unit(self.target_lang, src_pair.number, src_pair.unit, trg_pair.unit)
-            sentence = Replacer.replace_unit(sentence, trg_pair.text_part, trg_pair.number, trg_pair.unit, suitable_unit)
+
+            if self.configuration.mode == FixerModes.FIXING:
+                suitable_unit = units.get_correct_unit(self.target_lang, src_pair.number, src_pair.unit, trg_pair.unit)
+                sentence = Replacer.replace_unit(sentence, trg_pair.text_part, trg_pair.number, trg_pair.unit, suitable_unit)
+            else:
+                converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
+                if converted_unit and converted_unit:
+                    sentence = Replacer.replace_unit_number(sentence, trg_pair, converted_number, converted_unit)
 
         return sentence, [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT] if len(bindings) else []
 
@@ -141,18 +158,24 @@ class NumberFixer:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
 
-            src_number = str(src_pair.number) if src_pair.number_as_string else Splitter.extract_string_number_from_number_unit_string(src_pair.text_part)
+            if self.configuration.mode == FixerModes.RECALCULATING:
+                converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
+                if converted_unit and converted_unit:
+                    sentence = Replacer.replace_unit_number(sentence, trg_pair, converted_number, converted_unit)
+                    change = True
+            else:
+                src_number = str(src_pair.number) if src_pair.number_as_string else Splitter.extract_string_number_from_number_unit_string(src_pair.text_part)
 
-            idx_dec_sep = src_number.find(self.source_lang.decimal_separator)
-            idx_ths_sep = src_number.find(self.source_lang.thousands_separator)
-            if -1 < idx_dec_sep < idx_ths_sep and idx_ths_sep > -1:
-                continue
+                idx_dec_sep = src_number.find(self.source_lang.decimal_separator)
+                idx_ths_sep = src_number.find(self.source_lang.thousands_separator)
+                if -1 < idx_dec_sep < idx_ths_sep and idx_ths_sep > -1:
+                    continue
 
-            trg_number = trg_pair.number_as_string if trg_pair.number_as_string else trg_pair.text_part.replace(trg_pair.unit.word, '').strip()
+                trg_number = trg_pair.number_as_string if trg_pair.number_as_string else trg_pair.text_part.replace(trg_pair.unit.word, '').strip()
 
-            swapped_separators = DecimalSeparatorFixer.swap_separators(src_number)
-            sentence = Replacer.replace_number(sentence, trg_pair.text_part, trg_number, swapped_separators)
-            change = True
+                swapped_separators = DecimalSeparatorFixer.swap_separators(src_number)
+                sentence = Replacer.replace_number(sentence, trg_pair.text_part, trg_number, swapped_separators)
+                change = True
 
         return sentence, [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] if len(bindings) and change else []
 

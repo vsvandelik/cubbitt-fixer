@@ -64,9 +64,9 @@ class FixerConfigurator:
         self.source_lang = self.get_language(config, 'source_lang')
         self.target_lang = self.get_language(config, 'target_lang')
 
-        self.aligner = self.verify_and_get_instance(get_aligners_list(), config, 'aligner')
-        self.lemmatizator = self.verify_and_get_instance(get_lemmatizators_list(), config, 'lemmatizator')
-        self.names_tagger = self.verify_and_get_instance(get_names_tagger_list(), config, 'names_tagger')
+        self.aligner = self.verify_and_get_instance(get_aligners_list(), config, 'aligner')()
+        self.lemmatizator = self.verify_and_get_instance(get_lemmatizators_list(), config, 'lemmatizator')()
+        self.names_tagger = self.verify_and_get_instance(get_names_tagger_list(), config, 'names_tagger')()
         self.mode = self.verify_and_get_instance({'fixing': FixerModes.FIXING, 'recalculating': FixerModes.RECALCULATING}, config, 'mode')
         self.base_tolerance = self.verify_number_interval(0, 1, config, 'base_tolerance')
         self.approximately_tolerance = self.verify_number_interval(0, 1, config, 'approximately_tolerance')

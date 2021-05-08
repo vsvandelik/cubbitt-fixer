@@ -124,5 +124,5 @@ class UDPipeOffline(LemmatizationInterface):
 def get_lemmatizators_list():
     return {
         'udpipe_online': UDPipeApi,
-        'udpipe_offline': UDPipeOffline()
+        'udpipe_offline': UDPipeOffline
     }
