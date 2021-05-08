@@ -56,7 +56,7 @@ class NumberFixer:
         self.number_patter_target = re.compile(
             rf"((?:{units.get_regex_units_for_language_before_numbers(self.target_lang)})\s?\d[\d .,]*(?:{self.target_lang.big_numbers_scale_keys})?|\d[\d .,]*[\s-]?((?:{self.target_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(self.target_lang)})\b|\d+\'\d+\")")
 
-    def fix_numbers_problems(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
+    def fix(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
         """Fix numbers problems in given sentence based on original text and translated text.
 
         There are two fixing methods. One for single number problem and the second for the rest. That is because

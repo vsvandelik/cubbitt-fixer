@@ -30,7 +30,6 @@ class FixerConfigurator:
     def __init__(self):
         self.source_lang = None
         self.target_lang = None
-        self.tools = []
         self.aligner = None
         self.lemmatizator = None
         self.names_tagger = None
@@ -38,6 +37,7 @@ class FixerConfigurator:
         self.base_tolerance = None
         self.approximately_tolerance = None
         self.exchange_rates = None
+        self.tools = []
         self.target_units = []
 
     def validate_configuration(self):
@@ -62,7 +62,7 @@ class FixerConfigurator:
 
     def load_from_dict(self, config: dict):
         self.source_lang = self.get_language(config, 'source_lang')
-        self.target_lang = self.get_language(config, 'source_lang')
+        self.target_lang = self.get_language(config, 'target_lang')
 
         self.aligner = self.verify_and_get_instance(get_aligners_list(), config, 'aligner')
         self.lemmatizator = self.verify_and_get_instance(get_lemmatizators_list(), config, 'lemmatizator')
@@ -71,62 +71,61 @@ class FixerConfigurator:
         self.base_tolerance = self.verify_number_interval(0, 1, config, 'base_tolerance')
         self.approximately_tolerance = self.verify_number_interval(0, 1, config, 'approximately_tolerance')
 
-        self.target_units = self.get_units_systems_by_names(config, 'target_units')
+        self.target_units = self.get_enum_items_by_names({e.name: e for e in UnitsSystem}, config, 'target_units')
+        self.tools = self.get_enum_items_by_names({e.name: e for e in FixerTools}, config, 'tools')
         self.exchange_rates = self.get_exchange_rates(config, 'exchange_rates')
 
     @staticmethod
     def verify_and_get_instance(instances: dict, config: dict, config_option: str):
         if config_option not in config.keys():
-            FixerConfiguratorException(f"Configuration file is broken. Some required fields ({config_option}) are missing.")
+            raise FixerConfiguratorException(f"Configuration file is broken. Some required fields ({config_option}) are missing.")
 
         label = config[config_option]
 
         if label not in instances.keys():
-            FixerConfiguratorException(f"{label} is not valid configuration option.")
+            raise FixerConfiguratorException(f"{label} is not valid configuration option.")
 
         return instances[label]
 
     @staticmethod
     def verify_number_interval(min_value: float, max_value: float, config: dict, config_option: str):
         if config_option not in config.keys():
-            FixerConfiguratorException(f"Configuration file is broken. Some required fields ({config_option}) are missing.")
+            raise FixerConfiguratorException(f"Configuration file is broken. Some required fields ({config_option}) are missing.")
 
         value = config[config_option]
 
         if not (min_value <= value <= max_value):
-            FixerConfiguratorException(f"{value} is not valid configuration option. It should be between {min_value} and {max_value}")
+            raise FixerConfiguratorException(f"{value} is not valid configuration option. It should be between {min_value} and {max_value}")
 
         return value
 
     @staticmethod
-    def get_units_systems_by_names(config: dict, config_option: str):
+    def get_enum_items_by_names(values: dict, config: dict, config_option: str):
         if config_option not in config.keys():
-            FixerConfiguratorException(f"Targets unit systems are not specified in the configuration file.")
+            raise FixerConfiguratorException(f"{config_option} are not specified in the configuration file.")
 
-        systems = {e.name: e.value for e in UnitsSystem}
+        parsed_values = []
 
-        parsed_systems = []
+        for item in config[config_option]:
+            item_uppercase = item.upper()
+            if item_uppercase not in values.keys():
+                raise FixerConfiguratorException(f"Wrong definition of {config_option} - {item}.")
 
-        for target_unit in config[config_option]:
-            if target_unit not in systems.keys():
-                FixerConfiguratorException(f"Wrong definition of target unit system - {target_unit}.")
-                return
+            parsed_values.append(values[item_uppercase])
 
-            parsed_systems.append(systems[target_unit])
-
-        return parsed_systems
+        return parsed_values
 
     @staticmethod
     def get_language(config: dict, config_option: str):
         if config_option not in config.keys():
-            FixerConfiguratorException(f"Language option is missing.")
+            raise FixerConfiguratorException(f"Language option is missing.")
 
         return Languages.get_language(config[config_option])
 
     @staticmethod
     def get_exchange_rates(config: dict, config_option: str):
         if config_option not in config.keys():
-            FixerConfiguratorException(f"Exchange rates option is missing.")
+            raise FixerConfiguratorException(f"Exchange rates option is missing.")
 
         convertor = None
 

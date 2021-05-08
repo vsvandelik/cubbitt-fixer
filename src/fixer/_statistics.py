@@ -1,16 +1,17 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class StatisticsMarks(Enum):
     """Labels for statistics about fixer"""
 
-    SINGLE_NUMBER_UNIT_SENTENCE = 0
-    MULTIPLE_NUMBER_UNIT_SENTENCE = 1
-    CORRECT_NUMBER_UNIT = 2
-    CORRECT_NUMBER_WRONG_UNIT = 3
-    WRONG_NUMBER_CORRECT_UNIT = 4
-    WRONG_NUMBER_UNIT = 5
-    DECIMAL_SEPARATOR_PROBLEM = 6
-    DIFFERENT_COUNT_NUMBERS_UNITS = 7
-    NUMBER_AS_WORD = 8
-    UNFIXABLE_PART = 9
+    SINGLE_NUMBER_UNIT_SENTENCE = auto()
+    MULTIPLE_NUMBER_UNIT_SENTENCE = auto()
+    CORRECT_NUMBER_UNIT = auto()
+    CORRECT_NUMBER_WRONG_UNIT = auto()
+    WRONG_NUMBER_CORRECT_UNIT = auto()
+    WRONG_NUMBER_UNIT = auto()
+    DECIMAL_SEPARATOR_PROBLEM = auto()
+    DIFFERENT_COUNT_NUMBERS_UNITS = auto()
+    NUMBER_AS_WORD = auto()
+    UNFIXABLE_PART = auto()
+    EXCEPTION_CATCH = auto()

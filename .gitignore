@@ -6,3 +6,4 @@ docs/_static/
 docs/_templates/
 **/.pytest_cache/
 **/__pycache__/
+*.log

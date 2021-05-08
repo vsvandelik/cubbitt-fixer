@@ -1,9 +1,11 @@
+import logging
 from typing import Union, List, Tuple
 
 from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._names_fixer import NamesFixer
 from ._numbers_fixer import NumberFixer
-from .fixer_configurator import FixerConfigurator
+from ._statistics import StatisticsMarks
+from .fixer_configurator import FixerConfigurator, FixerTools
 
 
 class Fixer:
@@ -21,10 +23,18 @@ class Fixer:
     """
 
     def __init__(self, configuration: FixerConfigurator):
-        self.numbers_fixer = NumberFixer(configuration)
+        self.fixers = []
 
-        self.decimal_separator_fixer = DecimalSeparatorFixer(configuration)
-        self.names_fixer = NamesFixer(configuration)
+        if FixerTools.NAMES in configuration.tools:
+            self.fixers.append(NamesFixer(configuration))
+
+        if FixerTools.SEPARATORS in configuration.tools:
+            self.fixers.append(DecimalSeparatorFixer(configuration))
+
+        if FixerTools.UNITS in configuration.tools:
+            self.fixers.append(NumberFixer(configuration))
+
+        logging.basicConfig(filename='fixer.log', level=logging.ERROR)
 
     def fix(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
         """Function to fix translation of one sentence based on Fixer attributes.
@@ -42,28 +52,24 @@ class Fixer:
                 - `true` is there was found no problem
             - list with flags labeling the sentence and the correction
         """
-        marks_separators = marks_names = marks_numbers = []
 
-        # decimal_repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
-        # translated_text = decimal_repair if isinstance(decimal_repair, str) else translated_text
-        # names_repair, marks_names = self.names_fixer.fix(original_text, translated_text)
-        # translated_text = names_repair if isinstance(names_repair, str) else translated_text
-        # repair, marks_numbers = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
+        final_translated_text = translated_text
+        status = True
+        final_marks = []
 
-        try:
-            decimal_repair, marks_separators = self.decimal_separator_fixer.fix(original_text, translated_text)
-            translated_text = decimal_repair if isinstance(decimal_repair, str) else translated_text
-            repair, marks_numbers = self.numbers_fixer.fix_numbers_problems(original_text, translated_text)
-        except Exception as e:
-            print(e)
-            print(original_text)
-            print(translated_text)
-            print()
-            return False, []
+        for tool in self.fixers:
+            try:
+                output, marks = tool.fix(original_text, final_translated_text)
+                final_marks += marks
+                if isinstance(output, str):
+                    final_translated_text = output
+                elif not output:
+                    status = False
+            except Exception as error:
+                logging.error("Error when fixing sentence:\n%s\t%s\nException: %s", original_text, translated_text, error)
+                return False, [StatisticsMarks.EXCEPTION_CATCH]
 
-        if repair is True and isinstance(decimal_repair, str):
-            return decimal_repair, marks_numbers + marks_names + marks_separators
-        # elif repair is True and isinstance(names_repair, str):
-        #     return names_repair, marks_numbers + marks_names + marks_separators
+        if final_translated_text != translated_text:
+            return final_translated_text, final_marks
         else:
-            return repair, marks_numbers + marks_names + marks_separators
+            return True if status else False, final_marks
