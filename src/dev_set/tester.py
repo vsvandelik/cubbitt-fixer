@@ -2,20 +2,24 @@ import sys
 from os import listdir
 from os.path import isfile, join
 
-from tabulate import tabulate
-
 from src.fixer import *
+from tabulate import tabulate
 
 devset_languages = ["cs-en", "en-cs"]
 
-
-class Arguments:
-
-    def __init__(self, source_lang: str, target_lang: str):
-        self.recalculate = False
-        self.approximately = False
-        self.source_lang = source_lang
-        self.target_lang = target_lang
+default_config = {
+    'source_lang': 'cs',
+    'target_lang': 'en',
+    'aligner': 'fast_align',
+    'lemmatizator': 'udpipe_offline',
+    'names_tagger': 'nametag',
+    'mode': 'fixing',
+    'base_tolerance': 0.1,
+    'approximately_tolerance': 0.1,
+    'target_units': ['imperial', 'USD', 'F'],
+    'exchange_rates': 'cnb',
+    'tools': ['separators', 'units']
+}
 
 
 def report_result(data):
@@ -66,11 +70,15 @@ def process_sentences_in_file(folder_path: str, filename: str, fixer_instance: F
     return true_positive, true_negative, false_positive, false_negative
 
 
-def run_test(folder_name: str, report_file):
+def run_test(folder_name: str, report_file: str):
     devset_files = [file for file in listdir(folder_name) if isfile(join(folder_name, file)) and file != "README.md"]
 
     languages = folder_name.split("-")
-    fixer_instance = Fixer(Arguments(languages[0], languages[1]))
+    default_config['source_lang'] = languages[0]
+    default_config['target_lang'] = languages[1]
+    configuration = FixerConfigurator()
+    configuration.load_from_dict(default_config)
+    fixer_instance = Fixer(configuration)
 
     results = []
     true_positive, true_negative, false_positive, false_negative = 0, 0, 0, 0

@@ -113,7 +113,7 @@ class StringToNumberUnitConverter:
         else:
             for idx, char in enumerate(text):
                 if char.isalpha():
-                    return text[:idx]
+                    return text[:idx].strip()
 
     @staticmethod
     def __convert_text_to_inches(text: str) -> int:
