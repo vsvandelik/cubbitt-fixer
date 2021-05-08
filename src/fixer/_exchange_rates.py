@@ -76,5 +76,5 @@ def get_exchange_rates_convertors_list():
     }
 
 
-def get_default_exchnage_rates_convertor():
+def get_default_exchange_rates_convertor():
     return 'cnb'

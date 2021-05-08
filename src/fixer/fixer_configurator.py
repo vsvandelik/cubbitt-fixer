@@ -3,7 +3,7 @@ from enum import Enum, auto
 import yaml
 
 from ._aligner import get_aligners_list
-from ._exchange_rates import get_exchange_rates_convertors_list, get_default_exchnage_rates_convertor
+from ._exchange_rates import get_exchange_rates_convertors_list, get_default_exchange_rates_convertor
 from ._languages import Languages
 from ._lemmatization import get_lemmatizators_list
 from ._name_recognition import get_names_tagger_list
@@ -132,7 +132,7 @@ class FixerConfigurator:
         if isinstance(config[config_option], str) and config[config_option] in get_exchange_rates_convertors_list().keys():
             convertor = get_exchange_rates_convertors_list()[config[config_option]]()
         elif isinstance(config[config_option], dict):
-            default_convertor = get_default_exchnage_rates_convertor()
+            default_convertor = get_default_exchange_rates_convertor()
             convertor = get_exchange_rates_convertors_list()[default_convertor](config[config_option])
 
         return convertor

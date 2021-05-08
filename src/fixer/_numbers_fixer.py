@@ -150,8 +150,8 @@ class NumberFixer:
 
             trg_number = trg_pair.number_as_string if trg_pair.number_as_string else trg_pair.text_part.replace(trg_pair.unit.word, '').strip()
 
-            swaped_separators = DecimalSeparatorFixer.swap_separators(src_number)
-            sentence = Replacer.replace_number(sentence, trg_pair.text_part, trg_number, swaped_separators)
+            swapped_separators = DecimalSeparatorFixer.swap_separators(src_number)
+            sentence = Replacer.replace_number(sentence, trg_pair.text_part, trg_number, swapped_separators)
             change = True
 
         return sentence, [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] if len(bindings) and change else []

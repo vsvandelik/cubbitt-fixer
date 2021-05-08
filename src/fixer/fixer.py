@@ -18,8 +18,6 @@ class Fixer:
       - `target_lang` - text acronym of language of target sentence
       - `approximately` - flag whenever it  should consider approximation phrases
       - `recalculate` - flag whenever it should change correct units into different ones
-
-    :param arguments: object with arguments values
     """
 
     def __init__(self, configuration: FixerConfigurator):

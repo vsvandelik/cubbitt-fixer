@@ -1,7 +1,6 @@
 from typing import Tuple, List
 
 from ._custom_types import Number
-from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._languages import Language
 from ._units import Unit, units
 

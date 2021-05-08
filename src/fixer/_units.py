@@ -301,7 +301,7 @@ class UnitsWrapper:
 
         return pattern.replace('$', '\$')
 
-    def get_regex_units_for_language_before_numbers_list(self, language: Language) -> List[Unit]:
+    def get_regex_units_for_language_before_numbers_list(self, language: Language) -> List[str]:
         units_for_language = self.get_all_units_for_language(language)
 
         return [unit.word for unit in units_for_language if unit.before_number is True]

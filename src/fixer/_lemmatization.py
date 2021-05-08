@@ -29,6 +29,28 @@ class LemmatizationInterface(ABC):
         pass
 
 
+class UDPipeProcessor:
+
+    @staticmethod
+    def process_udpipe_output(conllu_string: str, only_numbers: bool):
+        lemmas = []
+
+        for sentence in parse(conllu_string):
+            for token in sentence.filter(upostag="NUM") if only_numbers else sentence:
+                if not token['misc']:
+                    continue
+                token_start, token_end = token['misc']['TokenRange'].split(':')
+                lemmas.append({
+                    'upostag': token['upos'],
+                    'word': token['form'],
+                    'lemma': token['lemma'],
+                    'rangeStart': int(token_start),
+                    'rangeEnd': int(token_end)
+                })
+
+        return lemmas
+
+
 class UDPipeApi(LemmatizationInterface):
     """Class for communicating with external web service UDPipe.
 
@@ -48,23 +70,8 @@ class UDPipeApi(LemmatizationInterface):
         if response.status_code != 200:
             raise LemmatizationException('UDPIPE was not able to connect to the UDPipe web service.')
 
-        lemmas = []
-
         parsed_response = json.loads(response.content)
-        for sentence in parse(parsed_response['result']):
-            for token in sentence.filter(upostag="NUM") if only_numbers else sentence:
-                if not token['misc']:
-                    continue
-                token_start, token_end = token['misc']['TokenRange'].split(':')
-                lemmas.append({
-                    'upostag': token['upos'],
-                    'word': token['form'],
-                    'lemma': token['lemma'],
-                    'rangeStart': int(token_start),
-                    'rangeEnd': int(token_end)
-                })
-
-        return lemmas
+        return UDPipeProcessor.process_udpipe_output(parsed_response['result'], only_numbers)
 
 
 class UDPipeOffline(LemmatizationInterface):
@@ -104,29 +111,14 @@ class UDPipeOffline(LemmatizationInterface):
     def get_lemmatization(self, src_text: str, language: Language, only_numbers=True) -> List[dict]:
         pipeline = self._english_pipeline if language is not Languages.CS else self._czech_pipeline
 
-        #pipeline = Pipeline(self._czech_model, 'tokenizer=ranges', Pipeline.DEFAULT, Pipeline.DEFAULT, "conllu")
+        # pipeline = Pipeline(self._czech_model, 'tokenizer=ranges', Pipeline.DEFAULT, Pipeline.DEFAULT, "conllu")
         error = ProcessingError()
 
         processed = pipeline.process(src_text, error)
         if error.occurred():
             raise LemmatizationException("Cannot get the lemmatization from the UDPipe service:" + error.message)
 
-        lemmas = []
-
-        for sentence in parse(processed):
-            for token in sentence.filter(upostag="NUM") if only_numbers else sentence:
-                if not token['misc']:
-                    continue
-                token_start, token_end = token['misc']['TokenRange'].split(':')
-                lemmas.append({
-                    'upostag': token['upos'],
-                    'word': token['form'],
-                    'lemma': token['lemma'],
-                    'rangeStart': int(token_start),
-                    'rangeEnd': int(token_end)
-                })
-
-        return lemmas
+        return UDPipeProcessor.process_udpipe_output(processed, only_numbers)
 
 
 def get_lemmatizators_list():

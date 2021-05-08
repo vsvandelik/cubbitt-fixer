@@ -5,7 +5,7 @@ from fixer._words_to_numbers_converter import WordsNumbersConverter
 
 from ._custom_types import *
 from ._languages import Language
-from ._lemmatization import UDPipeApi, LemmatizationInterface
+from ._lemmatization import LemmatizationInterface
 from ._splitter import StringToNumberUnitConverter as Splitter
 from ._units import Unit, units
 
@@ -93,7 +93,7 @@ class Finder:
         inside_number_phrase = False
         last_end = None
 
-        #  Concantenate numbers as words together next to each other
+        #  Concatenate numbers as words together next to each other
         for data in word_numbers:
             if data['upostag'] != 'NUM' and data['lemma'] not in language.big_numbers_scale.keys() and not (data['upostag'] == 'PUNC' and inside_number_phrase):
                 if current_phrase:

@@ -43,4 +43,3 @@ class Replacer:
     def replace_number(sentence: str, number_unit_part: str, number: str, new_number: str) -> str:
         with_new_number = number_unit_part.replace(number, new_number)
         return sentence.replace(number_unit_part, with_new_number)
-

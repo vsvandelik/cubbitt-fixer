@@ -1,8 +1,6 @@
 from typing import Union, Tuple, List
 
-from ._aligner import FastAlignAligner
 from ._languages import Languages
-from ._name_recognition import NameTagApi
 from .fixer_configurator import FixerConfigurator
 
 
