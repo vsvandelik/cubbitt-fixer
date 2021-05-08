@@ -5,7 +5,7 @@ from fixer._words_to_numbers_converter import WordsNumbersConverter
 
 from ._custom_types import *
 from ._languages import Language
-from ._lemmatization import UDPipeApi
+from ._lemmatization import UDPipeApi, LemmatizationInterface
 from ._splitter import StringToNumberUnitConverter as Splitter
 from ._units import Unit, units
 
@@ -82,9 +82,9 @@ class Finder:
         return pairs
 
     @staticmethod
-    def find_word_number_unit(sentence: str, language: Language):
+    def find_word_number_unit(sentence: str, language: Language, lemmatizator: LemmatizationInterface):
         #  Get lemmatization
-        word_numbers = UDPipeApi.get_lemmatization(sentence, language, False)
+        word_numbers = lemmatizator.get_lemmatization(sentence, language, False)
         if not word_numbers:
             return []
 
@@ -135,7 +135,7 @@ class Finder:
             end = phrase[-1]['rangeEnd']
             matched_unit = None
             whole_match = None
-            for unit in re.finditer(rf"{units.get_regex_units_for_language(language)}", sentence):
+            for unit in re.finditer(rf"\b({units.get_regex_units_for_language(language)})\b", sentence):
                 if unit.group(0).strip() in units.get_regex_units_for_language_before_numbers_list(language) and 0 <= (start - unit.end()) <= 2:
                     matched_unit = unit.group(0)
                     whole_match = sentence[unit.start():end]

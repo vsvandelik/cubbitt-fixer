@@ -521,8 +521,8 @@ units.add_unit(Unit('libry', UnitCategories.GBP, Languages.CS, None, numbers_val
 units.add_unit(Unit('liber', UnitCategories.GBP, Languages.CS, None, numbers_validity_more_than_5, False, None))
 
 units.add_unit(Unit('£', UnitCategories.GBP, Languages.EN, None, [], True, None, True))
-units.add_unit(Unit('pound', UnitCategories.GBP, Languages.EN, None, numbers_validity_ones, False, None))
 units.add_unit(Unit('pounds', UnitCategories.GBP, Languages.EN, None, numbers_validity_not_ones, False, None))
+units.add_unit(Unit('pound', UnitCategories.GBP, Languages.EN, None, numbers_validity_ones, False, None))
 
 units.add_unit(Unit('°C', UnitCategories.C, Languages.CS, None, [], True, None))
 units.add_unit(Unit('° C', UnitCategories.C, Languages.CS, None, [], True, None))

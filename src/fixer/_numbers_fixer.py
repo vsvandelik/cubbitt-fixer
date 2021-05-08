@@ -82,12 +82,12 @@ class NumberFixer:
             return True, []
 
         elif len(src_lang_numbers_units) != len(trg_lang_numbers_units):
-            number_as_word_src = Finder.find_word_number_unit(original_text, self.source_lang)
+            number_as_word_src = Finder.find_word_number_unit(original_text, self.source_lang, self.configuration.lemmatizator)
             if number_as_word_src:
                 marks += [StatisticsMarks.NUMBER_AS_WORD]
                 src_lang_numbers_units += number_as_word_src
 
-            number_as_word_trg = Finder.find_word_number_unit(translated_text, self.target_lang)
+            number_as_word_trg = Finder.find_word_number_unit(translated_text, self.target_lang, self.configuration.lemmatizator)
             if number_as_word_trg:
                 marks += [StatisticsMarks.NUMBER_AS_WORD]
                 trg_lang_numbers_units += number_as_word_trg

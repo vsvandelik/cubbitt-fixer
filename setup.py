@@ -20,6 +20,7 @@ setuptools.setup(
         "requests",
         "tabulate",
         "word2number",
-        "pyyaml"
+        "pyyaml",
+        "ufal.udpipe"
     ]
 )

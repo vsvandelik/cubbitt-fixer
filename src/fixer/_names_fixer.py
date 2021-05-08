@@ -15,7 +15,7 @@ class NamesFixer:
         self.target_lang = configuration.target_lang
 
     def fix(self, original_sentence: str, translated_sentence: str) -> Tuple[Union[str, bool], List]:
-        names_original_sentence = NameTagApi.get_names(original_sentence, self.source_lang)
+        names_original_sentence = self.configuration.names_tagger.get_names(original_sentence, self.source_lang)
 
         problems = []
 
@@ -27,10 +27,10 @@ class NamesFixer:
             return True, []
 
         if self.source_lang == Languages.EN:
-            alignment = FastAlignAligner.get_alignment(original_sentence, translated_sentence)
+            alignment = self.configuration.aligner.get_alignment(original_sentence, translated_sentence)
             src_index = 0
         else:
-            alignment = FastAlignAligner.get_alignment(translated_sentence, original_sentence)
+            alignment = self.configuration.aligner.get_alignment(translated_sentence, original_sentence)
             src_index = 1
 
         translated_sentence_backup = translated_sentence
