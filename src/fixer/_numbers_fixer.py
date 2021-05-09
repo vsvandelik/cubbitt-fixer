@@ -129,6 +129,8 @@ class NumberFixer:
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
+            if trg_pair.unit.category.system in self.configuration.target_units:
+                continue
             converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
             if not converted_unit or not converted_unit:
                 return sentence, [StatisticsMarks.UNABLE_TO_RECALCULATE]

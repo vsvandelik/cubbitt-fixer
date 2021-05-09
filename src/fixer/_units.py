@@ -25,7 +25,7 @@ class UnitDialect(Enum):
 
 class UnitCategory:
 
-    def __init__(self, system: List[UnitsSystem], base, base_coefficient: Optional[float], *, conversion=None):
+    def __init__(self, system: UnitsSystem, base, base_coefficient: Optional[float], *, conversion=None):
         self.system = system
         self.base = base
         self.base_coefficient = base_coefficient
@@ -58,10 +58,10 @@ class UnitsConvertors:
 
     @staticmethod
     def length_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
-        if UnitsSystem.SI in original_category.system and UnitsSystem.IMPERIAL in target_system:
+        if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number / 0.3048
             target_category = UnitCategories.FT
-        elif UnitsSystem.IMPERIAL in original_category.system and UnitsSystem.SI in target_system:
+        elif UnitsSystem.IMPERIAL == original_category.system and UnitsSystem.SI in target_system:
             target_number = original_number * 0.3048
             target_category = UnitCategories.M
         else:
@@ -72,10 +72,10 @@ class UnitsConvertors:
 
     @staticmethod
     def weight_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
-        if UnitsSystem.SI in original_category.system and UnitsSystem.IMPERIAL in target_system:
+        if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number / 453.59237
             target_category = UnitCategories.LB
-        elif UnitsSystem.IMPERIAL in original_category.system and UnitsSystem.SI in target_system:
+        elif UnitsSystem.IMPERIAL == original_category.system and UnitsSystem.SI in target_system:
             target_number = original_number * 453.59237
             target_category = UnitCategories.G
         else:
@@ -86,10 +86,10 @@ class UnitsConvertors:
 
     @staticmethod
     def area_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
-        if UnitsSystem.SI in original_category.system and UnitsSystem.IMPERIAL in target_system:
+        if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number * 10.764
             target_category = UnitCategories.FT2
-        elif UnitsSystem.IMPERIAL in original_category.system and UnitsSystem.SI in target_system:
+        elif UnitsSystem.IMPERIAL == original_category.system and UnitsSystem.SI in target_system:
             target_number = original_number / 10.764
             target_category = UnitCategories.M2
         else:
@@ -129,10 +129,10 @@ class UnitsConvertors:
 
     @staticmethod
     def temperature_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
-        if UnitsSystem.C in original_category.system and UnitsSystem.F in target_system:
+        if UnitsSystem.C == original_category.system and UnitsSystem.F in target_system:
             target_number = original_number * 1.8 + 32
             target_category = UnitCategories.F
-        elif UnitsSystem.F in original_category.system and UnitsSystem.C in target_system:
+        elif UnitsSystem.F == original_category.system and UnitsSystem.C in target_system:
             target_number = (original_number - 32) / 1.8
             target_category = UnitCategories.C
         else:
@@ -143,31 +143,31 @@ class UnitsConvertors:
 
 
 class UnitCategories:
-    MS = UnitCategory([UnitsSystem.SI], None, None)
-    KMH = UnitCategory([UnitsSystem.SI], MS, 1000 / 3600)
-    M2 = UnitCategory([UnitsSystem.SI], None, None, conversion=UnitsConvertors.area_convertor)
-    KM2 = UnitCategory([UnitsSystem.SI], M2, 1000000)
-    M3 = UnitCategory([UnitsSystem.SI], None, None)
-    M = UnitCategory([UnitsSystem.SI], None, None, conversion=UnitsConvertors.length_convertor)
-    KM = UnitCategory([UnitsSystem.SI], M, 1000)
-    DM = UnitCategory([UnitsSystem.SI], M, 0.1)
-    CM = UnitCategory([UnitsSystem.SI], M, 0.01)
-    MM = UnitCategory([UnitsSystem.SI], M, 0.001)
-    G = UnitCategory([UnitsSystem.SI], None, None, conversion=UnitsConvertors.weight_convertor)
-    KG = UnitCategory([UnitsSystem.SI], G, 1000)
-    LB = UnitCategory([UnitsSystem.IMPERIAL, UnitsSystem.US_CUSTOMARY], None, None, conversion=UnitsConvertors.weight_convertor)
-    FT = UnitCategory([UnitsSystem.IMPERIAL, UnitsSystem.US_CUSTOMARY], None, None, conversion=UnitsConvertors.length_convertor)
-    IN = UnitCategory([UnitsSystem.IMPERIAL, UnitsSystem.US_CUSTOMARY], FT, 1 / 12)
-    YD = UnitCategory([UnitsSystem.IMPERIAL, UnitsSystem.US_CUSTOMARY], FT, 3)
-    MI = UnitCategory([UnitsSystem.IMPERIAL, UnitsSystem.US_CUSTOMARY], FT, 5280)
-    FT2 = UnitCategory([UnitsSystem.IMPERIAL, UnitsSystem.US_CUSTOMARY], None, None, conversion=UnitsConvertors.area_convertor)
-    MI2 = UnitCategory([UnitsSystem.IMPERIAL, UnitsSystem.US_CUSTOMARY], FT2, 27878400)
-    CZK = UnitCategory([UnitsSystem.CZK], None, None, conversion=UnitsConvertors.currency_convertor)
-    USD = UnitCategory([UnitsSystem.USD], None, None, conversion=UnitsConvertors.currency_convertor)
-    GBP = UnitCategory([UnitsSystem.GBP], None, None, conversion=UnitsConvertors.currency_convertor)
-    EUR = UnitCategory([UnitsSystem.EUR], None, None, conversion=UnitsConvertors.currency_convertor)
-    C = UnitCategory([UnitsSystem.C], None, None, conversion=UnitsConvertors.temperature_convertor)
-    F = UnitCategory([UnitsSystem.F], None, None, conversion=UnitsConvertors.currency_convertor)
+    MS = UnitCategory(UnitsSystem.SI, None, None)
+    KMH = UnitCategory(UnitsSystem.SI, MS, 1000 / 3600)
+    M2 = UnitCategory(UnitsSystem.SI, None, None, conversion=UnitsConvertors.area_convertor)
+    KM2 = UnitCategory(UnitsSystem.SI, M2, 1000000)
+    M3 = UnitCategory(UnitsSystem.SI, None, None)
+    M = UnitCategory(UnitsSystem.SI, None, None, conversion=UnitsConvertors.length_convertor)
+    KM = UnitCategory(UnitsSystem.SI, M, 1000)
+    DM = UnitCategory(UnitsSystem.SI, M, 0.1)
+    CM = UnitCategory(UnitsSystem.SI, M, 0.01)
+    MM = UnitCategory(UnitsSystem.SI, M, 0.001)
+    G = UnitCategory(UnitsSystem.SI, None, None, conversion=UnitsConvertors.weight_convertor)
+    KG = UnitCategory(UnitsSystem.SI, G, 1000)
+    LB = UnitCategory(UnitsSystem.IMPERIAL, None, None, conversion=UnitsConvertors.weight_convertor)
+    FT = UnitCategory(UnitsSystem.IMPERIAL, None, None, conversion=UnitsConvertors.length_convertor)
+    IN = UnitCategory(UnitsSystem.IMPERIAL, FT, 1 / 12)
+    YD = UnitCategory(UnitsSystem.IMPERIAL, FT, 3)
+    MI = UnitCategory(UnitsSystem.IMPERIAL, FT, 5280)
+    FT2 = UnitCategory(UnitsSystem.IMPERIAL, None, None, conversion=UnitsConvertors.area_convertor)
+    MI2 = UnitCategory(UnitsSystem.IMPERIAL, FT2, 27878400)
+    CZK = UnitCategory(UnitsSystem.CZK, None, None, conversion=UnitsConvertors.currency_convertor)
+    USD = UnitCategory(UnitsSystem.USD, None, None, conversion=UnitsConvertors.currency_convertor)
+    GBP = UnitCategory(UnitsSystem.GBP, None, None, conversion=UnitsConvertors.currency_convertor)
+    EUR = UnitCategory(UnitsSystem.EUR, None, None, conversion=UnitsConvertors.currency_convertor)
+    C = UnitCategory(UnitsSystem.C, None, None, conversion=UnitsConvertors.temperature_convertor)
+    F = UnitCategory(UnitsSystem.F, None, None, conversion=UnitsConvertors.currency_convertor)
 
     @staticmethod
     def get_categories_by_groups():
