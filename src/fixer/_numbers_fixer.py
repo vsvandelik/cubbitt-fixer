@@ -181,8 +181,7 @@ class NumberFixer:
 
         return sentence, [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] if len(bindings) and change else []
 
-    def __process_sentence_different_number_different_unit(
-            self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+    def __process_sentence_different_number_different_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
         return sentence, [StatisticsMarks.WRONG_NUMBER_UNIT] if len(bindings) else []
 
     @staticmethod
