@@ -1,0 +1,6 @@
+conllu
+requests
+tabulate
+word2number
+pyyaml
+ufal.udpipe
