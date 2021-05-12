@@ -28,6 +28,11 @@ class LemmatizationInterface(ABC):
         """Main alignment method returning the word-alignment."""
         pass
 
+    @staticmethod
+    @abstractmethod
+    def get_sentences_split(src_text: str, language: Language) -> List[List[str]]:
+        pass
+
 
 class UDPipeProcessor:
 
@@ -50,6 +55,23 @@ class UDPipeProcessor:
 
         return lemmas
 
+    @staticmethod
+    def split_by_paragraphs_sentences(conllu_string: str) -> List[List[str]]:
+        paragraphs = []
+        actual_paragraph = []
+
+        for sentence in parse(conllu_string):
+            metadata = sentence.metadata
+            if 'newpar' in metadata and actual_paragraph:
+                paragraphs.append(actual_paragraph)
+                actual_paragraph = []
+
+            actual_paragraph.append(metadata['text'])
+
+        paragraphs.append(actual_paragraph)
+
+        return paragraphs
+
 
 class UDPipeApi(LemmatizationInterface):
     """Class for communicating with external web service UDPipe.
@@ -60,18 +82,27 @@ class UDPipeApi(LemmatizationInterface):
     _UDPIPE_URL = "http://lindat.mff.cuni.cz/services/udpipe/api/process"
 
     @staticmethod
-    def get_lemmatization(src_text: str, language: Language, only_numbers=True) -> List[dict]:
-        """Get pairs of words and its lemmas in given language."""
-
+    def _do_http_request(src_text: str, language: Language, operations: str) -> dict:
         model = "&model=en" if language is not Languages.CS else ""
-        complete_url = "{}?tokenizer=ranges&tagger&parser{}&data={}".format(UDPipeApi._UDPIPE_URL, model, src_text)
+        complete_url = "{}?{}{}&data={}".format(UDPipeApi._UDPIPE_URL, operations, model, src_text)
         response = requests.get(complete_url)
 
         if response.status_code != 200:
             raise LemmatizationException('UDPIPE was not able to connect to the UDPipe web service.')
 
-        parsed_response = json.loads(response.content)
-        return UDPipeProcessor.process_udpipe_output(parsed_response['result'], only_numbers)
+        return json.loads(response.content)
+
+    @staticmethod
+    def get_lemmatization(src_text: str, language: Language, only_numbers=True) -> List[dict]:
+        """Get pairs of words and its lemmas in given language."""
+
+        response = UDPipeApi._do_http_request(src_text, language, "tokenizer=ranges&tagger&parser")
+        return UDPipeProcessor.process_udpipe_output(response['result'], only_numbers)
+
+    @staticmethod
+    def get_sentences_split(src_text: str, language: Language) -> List[List[str]]:
+        response = UDPipeApi._do_http_request(src_text, language, "tokenizer=ranges")
+        return UDPipeProcessor.split_by_paragraphs_sentences(response['result'])
 
 
 class UDPipeOffline(LemmatizationInterface):
@@ -111,7 +142,6 @@ class UDPipeOffline(LemmatizationInterface):
     def get_lemmatization(self, src_text: str, language: Language, only_numbers=True) -> List[dict]:
         pipeline = self._english_pipeline if language is not Languages.CS else self._czech_pipeline
 
-        # pipeline = Pipeline(self._czech_model, 'tokenizer=ranges', Pipeline.DEFAULT, Pipeline.DEFAULT, "conllu")
         error = ProcessingError()
 
         processed = pipeline.process(src_text, error)
@@ -119,6 +149,17 @@ class UDPipeOffline(LemmatizationInterface):
             raise LemmatizationException("Cannot get the lemmatization from the UDPipe service:" + error.message)
 
         return UDPipeProcessor.process_udpipe_output(processed, only_numbers)
+
+    def get_sentences_split(self, src_text: str, language: Language) -> List[List[str]]:
+        model = self._english_model if language is not Languages.CS else self._czech_model
+        pipeline = Pipeline(model, 'tokenizer=ranges', Pipeline.NONE, Pipeline.NONE, "conllu")
+        error = ProcessingError()
+
+        processed = pipeline.process(src_text, error)
+        if error.occurred():
+            raise LemmatizationException("Cannot get the lemmatization from the UDPipe service:" + error.message)
+
+        return UDPipeProcessor.split_by_paragraphs_sentences(processed)
 
 
 def get_lemmatizators_list():
