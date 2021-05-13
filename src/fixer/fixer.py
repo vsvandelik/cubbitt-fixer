@@ -60,7 +60,7 @@ class Fixer:
 
         for tool in self.fixers:
             try:
-                output, marks = tool.fix(sentence_pair.source_text, sentence_pair.target_text)
+                output, marks = tool.fix(sentence_pair)
                 final_marks += marks
                 if isinstance(output, str):
                     sentence_pair.target_text = output
@@ -68,7 +68,6 @@ class Fixer:
                     status = False
             except Exception as error:
                 logging.error("Error when fixing sentence:\n%s\t%s\nException: %s", original_text, translated_text, error)
-                raise error
                 return False, [StatisticsMarks.EXCEPTION_CATCH]
 
         if sentence_pair.target_text_has_changed:

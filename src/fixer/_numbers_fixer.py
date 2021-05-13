@@ -7,6 +7,7 @@ from ._replacer import Replacer
 from ._splitter import StringToNumberUnitConverter as Splitter
 from ._statistics import StatisticsMarks
 from ._units import units
+from ._sentence_pair import SentencePair
 from .fixer_configurator import FixerConfigurator, FixerModes
 
 
@@ -56,14 +57,12 @@ class NumberFixer:
         self.number_patter_target = re.compile(
             rf"((?:{units.get_regex_units_for_language_before_numbers(self.target_lang)})\s?\d[\d .,]*(?:{self.target_lang.big_numbers_scale_keys})?|\d[\d .,]*[\s-]?((?:{self.target_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(self.target_lang)})\b|\d+\'\d+\")")
 
-    def fix(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
+    def fix(self, sentence_pair: SentencePair) -> Tuple[Union[str, bool], List]:
         """Fix numbers problems in given sentence based on original text and translated text.
 
         There are two fixing methods. One for single number problem and the second for the rest. That is because
         there are used different heuristics for each case.
 
-        :param original_text: Text in source language for verifying the translation.
-        :param translated_text: Text translated by translator.
         :return: tuple with fixer output:
 
             - result of the fixer
@@ -73,8 +72,8 @@ class NumberFixer:
             - list with flags labeling the sentence and the correction
         """
 
-        src_lang_numbers_units = Finder.find_number_unit_pairs(original_text, self.source_lang, self.number_patter_source)
-        trg_lang_numbers_units = Finder.find_number_unit_pairs(translated_text, self.target_lang, self.number_patter_target)
+        src_lang_numbers_units = Finder.find_number_unit_pairs(sentence_pair.source_text, self.source_lang, self.number_patter_source)
+        trg_lang_numbers_units = Finder.find_number_unit_pairs(sentence_pair.target_text, self.target_lang, self.number_patter_target)
 
         marks = []
 
@@ -82,12 +81,12 @@ class NumberFixer:
             return True, []
 
         elif len(src_lang_numbers_units) != len(trg_lang_numbers_units):
-            number_as_word_src = Finder.find_word_number_unit(original_text, self.source_lang, self.configuration.lemmatizator)
+            number_as_word_src = Finder.find_word_number_unit(sentence_pair.source_text, self.source_lang, sentence_pair.source_lemmas)
             if number_as_word_src:
                 marks += [StatisticsMarks.NUMBER_AS_WORD]
                 src_lang_numbers_units += number_as_word_src
 
-            number_as_word_trg = Finder.find_word_number_unit(translated_text, self.target_lang, self.configuration.lemmatizator)
+            number_as_word_trg = Finder.find_word_number_unit(sentence_pair.target_text, self.target_lang, sentence_pair.target_lemmas)
             if number_as_word_trg:
                 marks += [StatisticsMarks.NUMBER_AS_WORD]
                 trg_lang_numbers_units += number_as_word_trg
@@ -110,14 +109,14 @@ class NumberFixer:
             3: self.__process_sentence_different_number_different_unit,
         }
 
-        result_sentence = translated_text
+        result_sentence = sentence_pair.target_text
 
         for idx, val in levels.items():
             binding = self.__process_src_trg_pairs_relationships(relationships, idx)
             result_sentence, m = val(binding, src_lang_numbers_units, trg_lang_numbers_units, result_sentence)
             marks += m
 
-        if result_sentence == translated_text:
+        if result_sentence == sentence_pair.target_text:
             return True, marks
         else:
             return result_sentence, marks

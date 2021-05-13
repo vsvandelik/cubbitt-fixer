@@ -82,10 +82,9 @@ class Finder:
         return pairs
 
     @staticmethod
-    def find_word_number_unit(sentence: str, language: Language, lemmatizator: LemmatizationInterface):
+    def find_word_number_unit(sentence: str, language: Language, lemmatization):
         #  Get lemmatization
-        word_numbers = lemmatizator.get_lemmatization(sentence, language, False)
-        if not word_numbers:
+        if not lemmatization:
             return []
 
         values = []
@@ -94,7 +93,7 @@ class Finder:
         last_end = None
 
         #  Concatenate numbers as words together next to each other
-        for data in word_numbers:
+        for data in lemmatization:
             if data['upostag'] != 'NUM' and data['lemma'] not in language.big_numbers_scale.keys() and not (data['upostag'] == 'PUNC' and inside_number_phrase):
                 if current_phrase:
                     if current_phrase[-1]['upostag'] == 'PUNC':
