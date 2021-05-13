@@ -24,12 +24,8 @@ class NamesFixer:
         if len(problems) == 0:
             return True, []
 
-        if self.source_lang == Languages.EN:
-            alignment = self.configuration.aligner.get_alignment(original_sentence, translated_sentence)
-            src_index = 0
-        else:
-            alignment = self.configuration.aligner.get_alignment(translated_sentence, original_sentence)
-            src_index = 1
+        alignment = self.configuration.aligner.get_alignment(original_sentence, translated_sentence, self.source_lang, self.target_lang)
+        src_index = 0 if self.source_lang == Languages.EN else 1
 
         translated_sentence_backup = translated_sentence
 

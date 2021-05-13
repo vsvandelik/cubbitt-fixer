@@ -4,6 +4,7 @@ from typing import Union, List, Tuple
 from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._names_fixer import NamesFixer
 from ._numbers_fixer import NumberFixer
+from ._sentence_pair import SentencePair
 from ._statistics import StatisticsMarks
 from .fixer_configurator import FixerConfigurator, FixerTools
 
@@ -22,6 +23,7 @@ class Fixer:
 
     def __init__(self, configuration: FixerConfigurator):
         self.fixers = []
+        self.configuration = configuration
 
         if FixerTools.NAMES in configuration.tools:
             self.fixers.append(NamesFixer(configuration))
@@ -51,23 +53,25 @@ class Fixer:
             - list with flags labeling the sentence and the correction
         """
 
-        final_translated_text = translated_text
+        sentence_pair = SentencePair(original_text, translated_text, self.configuration)
+
         status = True
         final_marks = []
 
         for tool in self.fixers:
             try:
-                output, marks = tool.fix(original_text, final_translated_text)
+                output, marks = tool.fix(sentence_pair.source_text, sentence_pair.target_text)
                 final_marks += marks
                 if isinstance(output, str):
-                    final_translated_text = output
+                    sentence_pair.target_text = output
                 elif not output:
                     status = False
             except Exception as error:
                 logging.error("Error when fixing sentence:\n%s\t%s\nException: %s", original_text, translated_text, error)
+                raise error
                 return False, [StatisticsMarks.EXCEPTION_CATCH]
 
-        if final_translated_text != translated_text:
-            return final_translated_text, final_marks
+        if sentence_pair.target_text_has_changed:
+            return sentence_pair.target_text, final_marks
         else:
             return True if status else False, final_marks

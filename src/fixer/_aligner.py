@@ -25,7 +25,7 @@ class AlignerInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_alignment(src_text: str, trg_text: str) -> List[Tuple[str, str]]:
+    def get_alignment(src_text: str, trg_text: str, src_lang: Language, trg_lang: Language) -> List[Tuple[str, str]]:
         """Main alignment method returning the word-alignment."""
         pass
 
@@ -40,17 +40,20 @@ class FastAlignAligner(AlignerInterface):
     _ALIGNER_URL = 'https://quest.ms.mff.cuni.cz/ptakopet-mt380/align/en-cs'
 
     @staticmethod
-    def get_alignment(src_text: str, trg_text: str) -> List[Tuple[str, str]]:
+    def get_alignment(src_text: str, trg_text: str, src_lang: Language, trg_lang: Language) -> List[Tuple[str, str]]:
         """Static method for getting a word-alignment of pair of english and czech sentences.
 
         Based on given sentences it communicate with external word-aligner tool, which
         returns the pairs of matching indexes and tokenized input sentences.
 
-        :param src_text: Sentence in english
-        :param trg_text: Sentence in czech
         :raises AlignerException: Exception raises when it was not possible to connect to the server
         :return: List of tuples of matching words, first word is in english, second in czech
         """
+        if src_lang == Languages.CS:
+            temp = src_text
+            src_text = trg_text
+            trg_text = temp
+
         payload = json.dumps({
             'src_text': src_text,
             'trg_text': trg_text})
@@ -109,18 +112,16 @@ class OrderAligner(AlignerInterface):
         return selected_tokens, numbers_tokens, units_tokens
 
     @staticmethod
-    def get_alignment(src_text: str, trg_text: str) -> List[Tuple[str, str]]:
+    def get_alignment(src_text: str, trg_text: str, src_lang: Language, trg_lang: Language) -> List[Tuple[str, str]]:
         """Returns only units and numbers word alignment based on order in sentence.
 
         It extracts list of numbers and units from both sentences and mapped
         those lists between languages.
 
-        :param src_text: Sentence in english
-        :param trg_text: Sentence in czech
         :return: List of tuples of matching words (only units and numbers), first word is in english, second in czech
         """
-        tokens_src, _, _ = OrderAligner._get_list_numbers_units(src_text, Languages.EN)
-        _, numbers_tokens, units_tokens = OrderAligner._get_list_numbers_units(trg_text, Languages.CS)
+        tokens_src, _, _ = OrderAligner._get_list_numbers_units(src_text, src_lang)
+        _, numbers_tokens, units_tokens = OrderAligner._get_list_numbers_units(trg_text, trg_lang)
 
         output_tokens = []
 
