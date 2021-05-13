@@ -1,9 +1,8 @@
 import re
 from typing import Union, List, Tuple
 
-from ._sentence_pair import SentencePair
-
 from ._languages import Language
+from ._sentence_pair import SentencePair
 from ._statistics import StatisticsMarks
 from .fixer_configurator import FixerConfigurator
 

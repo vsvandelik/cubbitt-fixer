@@ -4,10 +4,10 @@ from typing import Union, List, Tuple, Dict
 from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._finder import Finder, NumberUnitFinderResult
 from ._replacer import Replacer
+from ._sentence_pair import SentencePair
 from ._splitter import StringToNumberUnitConverter as Splitter
 from ._statistics import StatisticsMarks
 from ._units import units
-from ._sentence_pair import SentencePair
 from .fixer_configurator import FixerConfigurator, FixerModes
 
 

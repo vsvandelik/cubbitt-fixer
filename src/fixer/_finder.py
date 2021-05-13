@@ -5,7 +5,6 @@ from fixer._words_to_numbers_converter import WordsNumbersConverter
 
 from ._custom_types import *
 from ._languages import Language
-from ._lemmatization import LemmatizationInterface
 from ._splitter import StringToNumberUnitConverter as Splitter
 from ._units import Unit, units
 
