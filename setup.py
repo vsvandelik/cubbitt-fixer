@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="cubbitt-fix-vsvandelik",
-    version="0.0.2",
+    version="0.0.3",
     author="Vojtech Svandelik",
     author_email="vojtech.svandelik@gmail.com",
     description="CUBBITT fixer for numbers and units problems.",
