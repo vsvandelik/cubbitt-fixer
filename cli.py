@@ -46,7 +46,8 @@ def main(args):
             for mark in marks:
                 statistics[mark.value] += 1
 
-            # if StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT not in marks: continue
+            #if StatisticsMarks.MULTIPLE_NAMES_SENTENCE not in marks: continue
+            #print(left, right, repaired_sentence, sep='\n', end='\n\n')
 
             if isinstance(repaired_sentence, str):  # reporting repairs
                 print(left, right, repaired_sentence, sep='\n', end='\n\n')

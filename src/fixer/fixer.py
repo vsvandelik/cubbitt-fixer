@@ -68,6 +68,7 @@ class Fixer:
                     status = False
             except Exception as error:
                 logging.error("Error when fixing sentence:\n%s\t%s\nException: %s", original_text, translated_text, error)
+                raise error
                 return False, [StatisticsMarks.EXCEPTION_CATCH]
 
         if sentence_pair.target_text_has_changed:

@@ -17,5 +17,7 @@ class StatisticsMarks(Enum):
     EXCEPTION_CATCH = auto()
     UNABLE_TO_RECALCULATE = auto()
     RECALCULATED = auto()
-    NAMES_PROBLEM_FIXED = auto()
+    MULTIPLE_NAMES_SENTENCE = auto()
     NAMES_PROBLEM_UNFIXABLE = auto()
+    NAMES_CORRECT = auto()
+    SINGLE_NAME_SENTENCE = auto()
