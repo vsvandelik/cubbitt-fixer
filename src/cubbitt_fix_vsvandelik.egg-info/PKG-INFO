@@ -1,14 +1,17 @@
-Metadata-Version: 1.2
+Metadata-Version: 2.1
 Name: cubbitt-fix-vsvandelik
-Version: 0.0.2
+Version: 0.0.3
 Summary: CUBBITT fixer for numbers and units problems.
 Home-page: https://github.com/vsvandelik/lindat-translation-postprocessor
 Author: Vojtech Svandelik
 Author-email: vojtech.svandelik@gmail.com
 License: UNKNOWN
-Description: UNKNOWN
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.8
+License-File: LICENSE
+
+UNKNOWN
+
