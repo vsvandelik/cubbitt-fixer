@@ -60,11 +60,11 @@ class WordsNumbersConverter:
                 previous_was_scaling = False
             elif word in Languages.CS.big_numbers_scale.keys():
                 if previous_was_scaling:
-                    sum *= Languages.CS.big_numbers_scale[word]
+                    sum *= Languages.CS.big_numbers_scale[word][0]
                 elif last_number == 0:
-                    sum += Languages.CS.big_numbers_scale[word]
+                    sum += Languages.CS.big_numbers_scale[word][0]
                 else:
-                    sum += last_number * Languages.CS.big_numbers_scale[word]
+                    sum += last_number * Languages.CS.big_numbers_scale[word][0]
                 last_number = 0
                 previous_was_scaling = True
 

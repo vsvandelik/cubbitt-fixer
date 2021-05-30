@@ -76,7 +76,7 @@ class Finder:
             pairs.append(NumberUnitFinderResult(number, unit, approximately, part))
 
             if scale_key:
-                pairs[-1].add_scaling(language.big_numbers_scale[scale_key])
+                pairs[-1].add_scaling(language.big_numbers_scale[scale_key][0])
 
         return pairs
 

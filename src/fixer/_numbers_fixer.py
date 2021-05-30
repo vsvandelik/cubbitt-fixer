@@ -133,7 +133,7 @@ class NumberFixer:
             converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
             if not converted_unit or not converted_unit:
                 return sentence, [StatisticsMarks.UNABLE_TO_RECALCULATE]
-            sentence = Replacer.replace_unit_number(sentence, trg_pair, converted_number, converted_unit)
+            sentence = Replacer.replace_unit_number(sentence, trg_pair, src_pair.number, converted_number, converted_unit, self.target_lang)
 
         return sentence, [StatisticsMarks.RECALCULATED] if len(bindings) else []
 
@@ -148,7 +148,7 @@ class NumberFixer:
             else:
                 converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
                 if converted_unit and converted_unit:
-                    sentence = Replacer.replace_unit_number(sentence, trg_pair, converted_number, converted_unit)
+                    sentence = Replacer.replace_unit_number(sentence, trg_pair, src_pair.number, converted_number, converted_unit, self.target_lang)
 
         return sentence, [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT] if len(bindings) else []
 
@@ -162,7 +162,7 @@ class NumberFixer:
             if self.configuration.mode == FixerModes.RECALCULATING:
                 converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
                 if converted_unit and converted_unit:
-                    sentence = Replacer.replace_unit_number(sentence, trg_pair, converted_number, converted_unit)
+                    sentence = Replacer.replace_unit_number(sentence, trg_pair, src_pair.number, converted_number, converted_unit, self.target_lang)
                     change = True
             else:
                 src_number = str(src_pair.number) if src_pair.number_as_string else Splitter.extract_string_number_from_number_unit_string(src_pair.text_part)
@@ -171,6 +171,8 @@ class NumberFixer:
                 idx_ths_sep = src_number.find(self.source_lang.thousands_separator)
                 if -1 < idx_dec_sep < idx_ths_sep and idx_ths_sep > -1:
                     continue
+
+                # TODO: How about numbers with scaling?
 
                 trg_number = trg_pair.number_as_string if trg_pair.number_as_string else trg_pair.text_part.replace(trg_pair.unit.word, '').strip()
 
@@ -188,10 +190,10 @@ class NumberFixer:
             if self.configuration.mode == FixerModes.RECALCULATING:
                 converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
                 if converted_unit and converted_unit:
-                    sentence = Replacer.replace_unit_number(sentence, trg_pair, converted_number, converted_unit)
+                    sentence = Replacer.replace_unit_number(sentence, trg_pair, src_pair.number, converted_number, converted_unit, self.target_lang)
             else:
                 suitable_unit = units.get_correct_unit(self.target_lang, src_pair.number, src_pair.unit, trg_pair.unit)
-                sentence = Replacer.replace_unit_number(sentence, trg_pair, src_pair.number, suitable_unit)
+                sentence = Replacer.replace_unit_number(sentence, trg_pair, src_pair.number, src_pair.number, suitable_unit, self.target_lang)
 
         return sentence, [StatisticsMarks.WRONG_NUMBER_UNIT] if len(bindings) else []
 
@@ -215,6 +217,9 @@ class NumberFixer:
 
             if not some_change:
                 break
+
+        if len(relationships) and level == 3:
+            return results
 
         to_remove = []
         for trg_idx, target_sentence in relationships.items():
