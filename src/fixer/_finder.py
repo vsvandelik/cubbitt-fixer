@@ -83,7 +83,7 @@ class Finder:
     @staticmethod
     def find_word_number_unit(sentence: str, language: Language, lemmatization):
         #  Get lemmatization
-        if not lemmatization:
+        if not lemmatization or not any(word['upostag'] == 'NUM' and not word['word'][0].isdigit() for word in lemmatization):
             return []
 
         values = []
@@ -124,8 +124,10 @@ class Finder:
         found_number_units = []
 
         for phrase in values:
-            if len(phrase) == 1 and phrase[0]['word'][0].isdigit():
+            if all(word['upostag'] == 'PUNC' or word['word'][0].isdigit() for word in phrase):
                 continue
+            #if len(phrase) == 1 and phrase[0]['word'][0].isdigit():
+            #    continue
             elif phrase[0]['word'][0].isdigit() and phrase[1]['word'] in language.big_numbers_scale.keys():
                 continue
 

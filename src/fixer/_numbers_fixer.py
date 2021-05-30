@@ -53,9 +53,9 @@ class NumberFixer:
 
         # preparing regex patterns based on supported units
         self.number_patter_source = re.compile(
-            rf"((?:{units.get_regex_units_for_language_before_numbers(self.source_lang)})\s?\d[\d .,]*(?:{self.source_lang.big_numbers_scale_keys})?|\d[\d .,]*[\s-]?((?:{self.source_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(self.source_lang)})\b|\d+\'\d+\")")
+            rf"((?:{units.get_regex_units_for_language_before_numbers(self.source_lang)})\s?\d([\d .,]*\d)?\s?(?:{self.source_lang.big_numbers_scale_keys})?|\d([\d .,]*\d)?[\s-]?((?:{self.source_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(self.source_lang)})\b|\d+\'\d+\")")
         self.number_patter_target = re.compile(
-            rf"((?:{units.get_regex_units_for_language_before_numbers(self.target_lang)})\s?\d[\d .,]*(?:{self.target_lang.big_numbers_scale_keys})?|\d[\d .,]*[\s-]?((?:{self.target_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(self.target_lang)})\b|\d+\'\d+\")")
+            rf"((?:{units.get_regex_units_for_language_before_numbers(self.target_lang)})\s?\d([\d .,]*\d)?\s?(?:{self.target_lang.big_numbers_scale_keys})?|\d([\d .,]*\d)?[\s-]?((?:{self.target_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(self.target_lang)})\b|\d+\'\d+\")")
 
     def fix(self, sentence_pair: SentencePair) -> Tuple[Union[str, bool], List]:
         """Fix numbers problems in given sentence based on original text and translated text.
@@ -181,6 +181,18 @@ class NumberFixer:
         return sentence, [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] if len(bindings) and change else []
 
     def __process_sentence_different_number_different_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        for binding_trg, binding_src in bindings:
+            src_pair = src_lang_numbers_units[binding_src]
+            trg_pair = trg_lang_numbers_units[binding_trg]
+
+            if self.configuration.mode == FixerModes.RECALCULATING:
+                converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
+                if converted_unit and converted_unit:
+                    sentence = Replacer.replace_unit_number(sentence, trg_pair, converted_number, converted_unit)
+            else:
+                suitable_unit = units.get_correct_unit(self.target_lang, src_pair.number, src_pair.unit, trg_pair.unit)
+                sentence = Replacer.replace_unit_number(sentence, trg_pair, src_pair.number, suitable_unit)
+
         return sentence, [StatisticsMarks.WRONG_NUMBER_UNIT] if len(bindings) else []
 
     @staticmethod
