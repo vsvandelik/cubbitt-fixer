@@ -154,6 +154,7 @@ class NumberFixer:
 
     def __process_sentence_different_number_same_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
         change = False
+        tolerance_marks = []
 
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
@@ -165,6 +166,11 @@ class NumberFixer:
                     sentence = Replacer.replace_unit_number(sentence, trg_pair, src_pair.number, converted_number, converted_unit, self.target_lang)
                     change = True
             else:
+
+                if self.__consider_tolerance_rates(src_pair, trg_pair):
+                    tolerance_marks = [StatisticsMarks.APPLIED_TOLERANCE_RATE]
+                    continue
+
                 src_number = str(src_pair.number) if src_pair.number_as_string else Splitter.extract_string_number_from_number_unit_string(src_pair.text_part)
 
                 idx_dec_sep = src_number.find(self.source_lang.decimal_separator)
@@ -180,9 +186,11 @@ class NumberFixer:
                 sentence = Replacer.replace_number(sentence, trg_pair.text_part, trg_number, swapped_separators)
                 change = True
 
-        return sentence, [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] if len(bindings) and change else []
+        return sentence, ([StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] if len(bindings) and change else []) + tolerance_marks
 
     def __process_sentence_different_number_different_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        tolerance_marks = []
+
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
@@ -192,10 +200,31 @@ class NumberFixer:
                 if converted_unit and converted_unit:
                     sentence = Replacer.replace_unit_number(sentence, trg_pair, src_pair.number, converted_number, converted_unit, self.target_lang)
             else:
+                if self.__consider_tolerance_rates(src_pair, trg_pair):
+                    tolerance_marks = [StatisticsMarks.APPLIED_TOLERANCE_RATE]
+                    continue
+
                 suitable_unit = units.get_correct_unit(self.target_lang, src_pair.number, src_pair.unit, trg_pair.unit)
                 sentence = Replacer.replace_unit_number(sentence, trg_pair, src_pair.number, src_pair.number, suitable_unit, self.target_lang)
 
-        return sentence, [StatisticsMarks.WRONG_NUMBER_UNIT] if len(bindings) else []
+        return sentence, ([StatisticsMarks.WRONG_NUMBER_UNIT] if len(bindings) else []) + tolerance_marks
+
+    def __consider_tolerance_rates(self, src_pair, trg_pair):
+        base_src_number = units.convert_to_base_in_category(src_pair.unit, src_pair.number)
+        converted_trg_number = units.convert_to_base_in_another_system(trg_pair.unit, trg_pair.number, src_pair.unit.category)
+
+        if src_pair.approximately:
+            tolerance = base_src_number * self.configuration.approximately_tolerance
+        else:
+            tolerance = base_src_number * self.configuration.base_tolerance
+
+        if not converted_trg_number:
+            return False
+
+        if (base_src_number - tolerance) < converted_trg_number < (base_src_number + tolerance):
+            return True
+
+        return False
 
     @staticmethod
     def __process_src_trg_pairs_relationships(relationships: Dict[int, Relationship], level: int) -> List[Tuple[int, int]]:

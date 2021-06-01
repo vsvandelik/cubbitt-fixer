@@ -75,6 +75,8 @@ class WordsNumbersConverter:
 
     @staticmethod
     def __en_converter(phrase: List[str]) -> Number:
+        if len(phrase) == 1 and phrase[0] in Languages.EN.big_numbers_scale:
+            return Languages.EN.big_numbers_scale[phrase[0]]
         return w2n.word_to_num(" ".join(phrase))
 
 

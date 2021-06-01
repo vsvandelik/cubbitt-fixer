@@ -10,6 +10,7 @@ class StatisticsMarks(Enum):
     CORRECT_NUMBER_WRONG_UNIT = auto()
     WRONG_NUMBER_CORRECT_UNIT = auto()
     WRONG_NUMBER_UNIT = auto()
+    APPLIED_TOLERANCE_RATE = auto()
     DECIMAL_SEPARATOR_PROBLEM = auto()
     DIFFERENT_COUNT_NUMBERS_UNITS = auto()
     NUMBER_AS_WORD = auto()

@@ -294,6 +294,25 @@ class UnitsWrapper:
 
         return converted_number, converted_unit
 
+    def convert_to_base_in_category(self, unit: Unit, number: Number):
+        if not unit.category.base:
+            return number
+
+        return number * unit.category.base_coefficient
+
+    def convert_to_base_in_another_system(self, unit: Unit, number: Number, needed_category: UnitCategory):
+        actual_category = unit.category
+        if actual_category.base:
+            number = number * unit.category.base_coefficient
+            actual_category = unit.category.base
+
+        converted_number, converted_category = actual_category.conversion(number, actual_category, [needed_category.system])
+
+        if converted_category != needed_category:
+            return None
+
+        return converted_number
+
     def get_list_units_by_category_language(self) -> dict:
         if self.__units_by_language_category:
             return self.__units_by_language_category
