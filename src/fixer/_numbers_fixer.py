@@ -1,6 +1,8 @@
 import re
 from typing import Union, List, Tuple, Dict
 
+from fixer._words_to_numbers_converter import WordsNumbersConverter
+
 from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._finder import Finder, NumberUnitFinderResult
 from ._replacer import Replacer
@@ -72,27 +74,28 @@ class NumberFixer:
             - list with flags labeling the sentence and the correction
         """
 
+        marks = []
+
         src_lang_numbers_units = Finder.find_number_unit_pairs(sentence_pair.source_text, self.source_lang, self.number_patter_source)
         trg_lang_numbers_units = Finder.find_number_unit_pairs(sentence_pair.target_text, self.target_lang, self.number_patter_target)
 
-        marks = []
-
-        if len(src_lang_numbers_units) == 0 and len(trg_lang_numbers_units) == 0:
-            return True, []
-
-        elif len(src_lang_numbers_units) != len(trg_lang_numbers_units):
+        if WordsNumbersConverter.contains_text_numbers(sentence_pair.source_text, self.source_lang):
             number_as_word_src = Finder.find_word_number_unit(sentence_pair.source_text, self.source_lang, sentence_pair.source_lemmas)
             if number_as_word_src:
                 marks += [StatisticsMarks.NUMBER_AS_WORD]
                 src_lang_numbers_units += number_as_word_src
 
+        if WordsNumbersConverter.contains_text_numbers(sentence_pair.target_text, self.target_lang):
             number_as_word_trg = Finder.find_word_number_unit(sentence_pair.target_text, self.target_lang, sentence_pair.target_lemmas)
             if number_as_word_trg:
                 marks += [StatisticsMarks.NUMBER_AS_WORD]
                 trg_lang_numbers_units += number_as_word_trg
 
-            if len(src_lang_numbers_units) != len(trg_lang_numbers_units):
-                marks += [StatisticsMarks.UNFIXABLE_PART]
+        if len(src_lang_numbers_units) == 0 and len(trg_lang_numbers_units) == 0:
+            return True, []
+
+        elif len(src_lang_numbers_units) != len(trg_lang_numbers_units):
+            marks += [StatisticsMarks.UNFIXABLE_PART]
 
         elif len(src_lang_numbers_units) == 1 and len(trg_lang_numbers_units) == 1:
             marks.append(StatisticsMarks.SINGLE_NUMBER_UNIT_SENTENCE)
@@ -180,10 +183,10 @@ class NumberFixer:
 
                 # TODO: How about numbers with scaling?
 
-                trg_number = trg_pair.number_as_string if trg_pair.number_as_string else trg_pair.text_part.replace(trg_pair.unit.word, '').strip()
+                trg_number = trg_pair.number_as_string.strip() if trg_pair.number_as_string else trg_pair.text_part.replace(trg_pair.unit.word, '').strip()
 
                 swapped_separators = DecimalSeparatorFixer.swap_separators(src_number)
-                sentence = Replacer.replace_number(sentence, trg_pair.text_part, trg_number, swapped_separators)
+                sentence = Replacer.replace_number(sentence, src_pair, trg_pair, self.target_lang, trg_number, src_pair.number)
                 change = True
 
         return sentence, ([StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] if len(bindings) and change else []) + tolerance_marks

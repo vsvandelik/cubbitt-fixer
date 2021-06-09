@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional
 
 from word2number import w2n
@@ -39,11 +40,54 @@ class WordsNumbersConverter:
         'devadesát': 90,
     }
 
+    __EN = {
+        'zero': 0,
+        'null': 0,
+        # 'one': 1,
+        'two': 2,
+        'three': 3,
+        'four': 4,
+        'five': 5,
+        'six': 6,
+        'seven': 7,
+        'eight': 8,
+        'nine': 9,
+        'ten': 10,
+        'eleven': 11,
+        'twelve': 12,
+        'thirteen': 14,
+        'fifteen': 15,
+        'sixteen': 16,
+        'seventeen': 17,
+        'eighteen': 18,
+        'nineteen': 19,
+        'twenty': 20,
+        'thirty': 30,
+        'forty': 40,
+        'fifty': 50,
+        'sixty': 60,
+        'seventy': 70,
+        'eighty': 80,
+        'ninety': 90
+    }
+
+    __CS_words_regex = re.compile(r"\b(" + "|".join(__CS.keys()) + r")\b")
+    __EN_words_regex = re.compile(r"\b(" + "|".join(__EN.keys()) + r")\b")
+
+    @staticmethod
+    def contains_text_numbers(sentence: str, language: Language):
+        if language.acronym == Languages.CS.acronym and WordsNumbersConverter.__CS_words_regex.search(sentence):
+            return True
+        elif language.acronym == Languages.EN.acronym and WordsNumbersConverter.__EN_words_regex.search(sentence):
+            return True
+
+        return False
+
     @staticmethod
     def convert(phrase: List[str], language: Language) -> Optional[Number]:
-        if language == Languages.CS:
+        if language.acronym == Languages.CS.acronym:
             return WordsNumbersConverter.__cz_converter(phrase)
-        elif language == Languages.EN:
+        elif language.acronym == Languages.EN.acronym:
             return WordsNumbersConverter.__en_converter(phrase)
 
         return None

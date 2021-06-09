@@ -61,6 +61,7 @@ class Languages:
         'miliarda': (1000000000, __SCALING_WORDS_VALIDITY['ones']),
         'miliardy': (1000000000, __SCALING_WORDS_VALIDITY['2_3_4']),
         'miliard': (1000000000, __SCALING_WORDS_VALIDITY['more_than_5']),
+        'mld.': (1000000000, None),
         'biliony': (1000000000000, __SCALING_WORDS_VALIDITY['2_3_4']),
         'bilionů': (1000000000000, __SCALING_WORDS_VALIDITY['more_than_5']),
         'bilionu': (1000000000000, __SCALING_WORDS_VALIDITY['more_than_5']),

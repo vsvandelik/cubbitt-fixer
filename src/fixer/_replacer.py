@@ -39,12 +39,16 @@ class Replacer:
         else:
             new_number_unit_part = f"{translated_number} {new_unit.word}"
 
-        return sentence.replace(number_unit_part, new_number_unit_part)
+        return sentence.replace(number_unit_part.strip(), new_number_unit_part).replace("  ", " ")
 
     @staticmethod
-    def replace_number(sentence: str, number_unit_part: str, number: str, new_number: str) -> str:
-        with_new_number = number_unit_part.replace(number, new_number)
-        return sentence.replace(number_unit_part, with_new_number)
+    def replace_number(sentence: str, source_number_unit: NumberUnitFinderResult, target_number_unit: NumberUnitFinderResult, language: Language, original_target_number: str, new_number: Number) -> str:
+
+        new_number = Replacer.__round_to_valid_digits(source_number_unit.number, new_number)
+        new_number = Replacer.__add_scaling_word(target_number_unit, new_number, language)
+
+        with_new_number = target_number_unit.text_part.replace(original_target_number, new_number)
+        return sentence.replace(target_number_unit.text_part, with_new_number)
 
     @staticmethod
     def replace_unit_number(sentence: str, original_number_unit: NumberUnitFinderResult, src_number: Number, new_number: Number, new_unit: Unit, language: Language) -> str:

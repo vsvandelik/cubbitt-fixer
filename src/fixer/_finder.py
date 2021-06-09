@@ -126,7 +126,7 @@ class Finder:
         for phrase in values:
             if all(word['upostag'] == 'PUNC' or word['word'][0].isdigit() for word in phrase):
                 continue
-            #if len(phrase) == 1 and phrase[0]['word'][0].isdigit():
+            # if len(phrase) == 1 and phrase[0]['word'][0].isdigit():
             #    continue
             elif phrase[0]['word'][0].isdigit() and phrase[1]['word'] in language.big_numbers_scale.keys():
                 continue
@@ -153,9 +153,18 @@ class Finder:
             if re.search(f"({'|'.join(language.approximately_phrases)}) {whole_match}", sentence):
                 approximately = True
 
+            # search for scaling word
+            scaling_words = [word['word'] for word in phrase if word['word'] in language.big_numbers_scale]
+            scaling_word = None
+            if scaling_words:
+                scaling_word = scaling_words[0]
+
             number = WordsNumbersConverter.convert([data['lemma'] for data in phrase if data['upostag'] != 'PUNC'], language)
 
             found_number_units.append(NumberUnitFinderResult(number, units.get_unit_by_word(matched_unit, language), approximately, whole_match))
             found_number_units[-1].set_number_as_string(sentence[start:end + 1])
+
+            if scaling_word:
+                found_number_units[-1].scaling = language.big_numbers_scale[scaling_word][0]
 
         return found_number_units
