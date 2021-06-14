@@ -53,11 +53,13 @@ class NumberFixer:
         self.source_lang = configuration.source_lang
         self.target_lang = configuration.target_lang
 
+
+
         # preparing regex patterns based on supported units
         self.number_patter_source = re.compile(
-            rf"((?:{units.get_regex_units_for_language_before_numbers(self.source_lang)})\s?\d([\d .,]*\d)?\s?(?:{self.source_lang.big_numbers_scale_keys})?|\d([\d .,]*\d)?[\s-]?((?:{self.source_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(self.source_lang)})\b|\d+\'\d+\")")
+            rf"((?:{units.get_regex_units_for_language_before_numbers(self.source_lang)})\s?\d+([ {self.source_lang.thousands_separator}]\d{{3}})*({self.source_lang.decimal_separator}\d+)?[\s-]?((?:{self.source_lang.big_numbers_scale_keys}|m)\b)?|\d+([ {self.source_lang.thousands_separator}]\d{{3}})*({self.source_lang.decimal_separator}\d+)?[\s-]?((?:{self.source_lang.big_numbers_scale_keys}|m)[\s-]?)?(?:{units.get_regex_units_for_language(self.source_lang)})(\b|\s|$|[,.\s])|\d+\'\d+\")")
         self.number_patter_target = re.compile(
-            rf"((?:{units.get_regex_units_for_language_before_numbers(self.target_lang)})\s?\d([\d .,]*\d)?\s?(?:{self.target_lang.big_numbers_scale_keys})?|\d([\d .,]*\d)?[\s-]?((?:{self.target_lang.big_numbers_scale_keys})\s)?(?:{units.get_regex_units_for_language(self.target_lang)})\b|\d+\'\d+\")")
+            rf"((?:{units.get_regex_units_for_language_before_numbers(self.target_lang)})\s?\d+([ {self.target_lang.thousands_separator}]\d{{3}})*({self.target_lang.decimal_separator}\d+)?[\s-]?((?:{self.target_lang.big_numbers_scale_keys}|m)\b)?|\d+([ {self.target_lang.thousands_separator}]\d{{3}})*({self.target_lang.decimal_separator}\d+)?[\s-]?((?:{self.target_lang.big_numbers_scale_keys}|m)[\s-]?)?(?:{units.get_regex_units_for_language(self.target_lang)})(\b|\s|$|[,.\s])|\d+\'\d+\")")
 
     def fix(self, sentence_pair: SentencePair) -> Tuple[Union[str, bool], List]:
         """Fix numbers problems in given sentence based on original text and translated text.
@@ -79,13 +81,13 @@ class NumberFixer:
         src_lang_numbers_units = Finder.find_number_unit_pairs(sentence_pair.source_text, self.source_lang, self.number_patter_source)
         trg_lang_numbers_units = Finder.find_number_unit_pairs(sentence_pair.target_text, self.target_lang, self.number_patter_target)
 
-        if WordsNumbersConverter.contains_text_numbers(sentence_pair.source_text, self.source_lang):
+        if WordsNumbersConverter.contains_text_numbers(sentence_pair.source_text, self.source_lang) or len(src_lang_numbers_units) != len(trg_lang_numbers_units):
             number_as_word_src = Finder.find_word_number_unit(sentence_pair.source_text, self.source_lang, sentence_pair.source_lemmas)
             if number_as_word_src:
                 marks += [StatisticsMarks.NUMBER_AS_WORD]
                 src_lang_numbers_units += number_as_word_src
 
-        if WordsNumbersConverter.contains_text_numbers(sentence_pair.target_text, self.target_lang):
+        if WordsNumbersConverter.contains_text_numbers(sentence_pair.target_text, self.target_lang) or len(src_lang_numbers_units) != len(trg_lang_numbers_units):
             number_as_word_trg = Finder.find_word_number_unit(sentence_pair.target_text, self.target_lang, sentence_pair.target_lemmas)
             if number_as_word_trg:
                 marks += [StatisticsMarks.NUMBER_AS_WORD]

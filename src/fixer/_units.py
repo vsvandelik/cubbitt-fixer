@@ -247,6 +247,7 @@ class UnitsWrapper:
         self.__units = []
         self.__units_by_languages = {}
         self.__units_by_language_category = {}
+        self.__single_symbol = []
 
     def add_unit(self, unit: Unit):
         self.__units.append(unit)
@@ -264,11 +265,11 @@ class UnitsWrapper:
 
             score = 0
 
-            if replacement_for and unit.dialect == replacement_for.dialect:
-                score += 1
+            #if replacement_for and unit.dialect == replacement_for.dialect:
+            #    score += 1
 
             if unit.abbreviation == original_unit.abbreviation:
-                score += 1
+                score += 2
 
             if not unit.numbers_validity:
                 score += 1
@@ -346,6 +347,12 @@ class UnitsWrapper:
         units_for_language = self.get_all_units_for_language(language)
         return [unit.word for unit in units_for_language]
 
+    def get_single_char_units_symbols(self):
+        if not self.__single_symbol:
+            self.__single_symbol = [unit.word for unit in self.__units if unit.abbreviation and len(unit.word) == 1 and not unit.word[0].isalpha()]
+
+        return self.__single_symbol
+
     def get_regex_units_for_language(self, language: Language) -> str:
         units_for_language = self.get_all_units_for_language(language)
 
@@ -386,6 +393,7 @@ numbers_validity_decimal = [float]
 units = UnitsWrapper()
 
 units.add_unit(Unit('km/h', UnitCategories.KMH, Languages.CS, None, True, None))
+units.add_unit(Unit('km / h', UnitCategories.KMH, Languages.CS, None, True, None))
 units.add_unit(Unit('kph', UnitCategories.KMH, Languages.CS, None, True, None))
 units.add_unit(Unit('kilometr za hodinu', UnitCategories.KMH, Languages.CS, numbers_validity_ones, False, None))
 units.add_unit(Unit('kilometry za hodinu', UnitCategories.KMH, Languages.CS, numbers_validity_2_3_4, False, None))
@@ -397,6 +405,7 @@ units.add_unit(Unit('kilometr v hodině', UnitCategories.KMH, Languages.CS, numb
 units.add_unit(Unit('kilometry v hodině', UnitCategories.KMH, Languages.CS, numbers_validity_2_3_4, False, None))
 
 units.add_unit(Unit('km/h', UnitCategories.KMH, Languages.EN, None, True, None))
+units.add_unit(Unit('km / h', UnitCategories.KMH, Languages.EN, None, True, None))
 units.add_unit(Unit('kph', UnitCategories.KMH, Languages.EN, None, True, None))
 units.add_unit(Unit('kilometers per hour', UnitCategories.KMH, Languages.EN, numbers_validity_not_ones, False, UnitDialect.AmE))
 units.add_unit(Unit('kilometer per hour', UnitCategories.KMH, Languages.EN, numbers_validity_ones, False, UnitDialect.AmE))
@@ -410,6 +419,7 @@ units.add_unit(Unit('kilometer-an-hour', UnitCategories.KMH, Languages.EN, numbe
 units.add_unit(Unit('kilometre-an-hour', UnitCategories.KMH, Languages.EN, numbers_validity_ones, False, None))
 
 units.add_unit(Unit('m/s', UnitCategories.MS, Languages.CS, None, True, None))
+units.add_unit(Unit('m / s', UnitCategories.MS, Languages.CS, None, True, None))
 units.add_unit(Unit('mps', UnitCategories.MS, Languages.CS, None, True, None))
 units.add_unit(Unit('metr za sekundu', UnitCategories.MS, Languages.CS, numbers_validity_ones, False, None))
 units.add_unit(Unit('metry za sekundu', UnitCategories.MS, Languages.CS, numbers_validity_2_3_4, False, None))
@@ -417,6 +427,7 @@ units.add_unit(Unit('metrů za sekundu', UnitCategories.MS, Languages.CS, number
 units.add_unit(Unit('metru za sekundu', UnitCategories.MS, Languages.CS, numbers_validity_decimal, False, None))
 
 units.add_unit(Unit('m/s', UnitCategories.MS, Languages.EN, None, True, None))
+units.add_unit(Unit('m / s', UnitCategories.MS, Languages.EN, None, True, None))
 units.add_unit(Unit('mps', UnitCategories.MS, Languages.EN, None, True, None))
 units.add_unit(Unit('meters per second', UnitCategories.MS, Languages.EN, numbers_validity_not_ones, False, UnitDialect.AmE))
 units.add_unit(Unit('meter per second', UnitCategories.MS, Languages.EN, numbers_validity_ones, False, UnitDialect.AmE))
@@ -553,35 +564,41 @@ units.add_unit(Unit('koruny české', UnitCategories.CZK, Languages.CS, numbers_
 units.add_unit(Unit('korun', UnitCategories.CZK, Languages.CS, numbers_validity_2_3_4, False, None))
 
 units.add_unit(Unit('CZK', UnitCategories.CZK, Languages.EN, None, True, None, True))
-units.add_unit(Unit('crowns', UnitCategories.CZK, Languages.EN, None, False, None))
+units.add_unit(Unit('crowns', UnitCategories.CZK, Languages.EN, numbers_validity_not_ones, False, None))
+units.add_unit(Unit('Czech crowns', UnitCategories.CZK, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('kroner', UnitCategories.CZK, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('kroners', UnitCategories.CZK, Languages.EN, numbers_validity_not_ones, False, None))
 
 units.add_unit(Unit('$', UnitCategories.USD, Languages.CS, None, True, None, True))
+units.add_unit(Unit('USD', UnitCategories.USD, Languages.CS, None, True, None, True))
 units.add_unit(Unit('dolar', UnitCategories.USD, Languages.CS, numbers_validity_ones, False, None))
 units.add_unit(Unit('dolary', UnitCategories.USD, Languages.CS, numbers_validity_2_3_4, False, None))
 units.add_unit(Unit('dolarů', UnitCategories.USD, Languages.CS, numbers_validity_2_3_4, False, None))
 
 units.add_unit(Unit('$', UnitCategories.USD, Languages.EN, None, True, None, True))
-units.add_unit(Unit('$', UnitCategories.USD, Languages.EN, None, True, None, True))
+units.add_unit(Unit('USD', UnitCategories.USD, Languages.EN, None, True, None, True))
 units.add_unit(Unit('dollar', UnitCategories.USD, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('dollars', UnitCategories.USD, Languages.EN, numbers_validity_not_ones, False, None))
 
 units.add_unit(Unit('€', UnitCategories.EUR, Languages.CS, None, True, None, True))
+units.add_unit(Unit('EUR', UnitCategories.EUR, Languages.CS, None, True, None, True))
 units.add_unit(Unit('euro', UnitCategories.EUR, Languages.CS, numbers_validity_ones, False, None))
 units.add_unit(Unit('eura', UnitCategories.EUR, Languages.CS, numbers_validity_2_3_4, False, None))
 units.add_unit(Unit('eur', UnitCategories.EUR, Languages.CS, numbers_validity_more_than_5, False, None))
 
 units.add_unit(Unit('€', UnitCategories.EUR, Languages.EN, None, True, None, True))
+units.add_unit(Unit('EUR', UnitCategories.EUR, Languages.EN, None, True, None, True))
 units.add_unit(Unit('euro', UnitCategories.EUR, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('euros', UnitCategories.EUR, Languages.EN, numbers_validity_not_ones, False, None))
 
 units.add_unit(Unit('£', UnitCategories.GBP, Languages.CS, None, True, None, True))
+units.add_unit(Unit('GBP', UnitCategories.GBP, Languages.CS, None, True, None, True))
 units.add_unit(Unit('libra', UnitCategories.GBP, Languages.CS, numbers_validity_ones, False, None))
 units.add_unit(Unit('libry', UnitCategories.GBP, Languages.CS, numbers_validity_2_3_4, False, None))
 units.add_unit(Unit('liber', UnitCategories.GBP, Languages.CS, numbers_validity_more_than_5, False, None))
 
 units.add_unit(Unit('£', UnitCategories.GBP, Languages.EN, None, True, None, True))
+units.add_unit(Unit('GBP', UnitCategories.GBP, Languages.EN, None, True, None, True))
 units.add_unit(Unit('pounds', UnitCategories.GBP, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('pound', UnitCategories.GBP, Languages.EN, numbers_validity_ones, False, None))
 
@@ -617,26 +634,48 @@ units.add_unit(Unit('degree fahrenheit', UnitCategories.F, Languages.EN, numbers
 units.add_unit(Unit('degrees Fahrenheit', UnitCategories.F, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('degrees fahrenheit', UnitCategories.F, Languages.EN, numbers_validity_not_ones, False, None))
 
+units.add_unit(Unit('palec', UnitCategories.IN, Languages.CS, numbers_validity_ones, False, None))
+units.add_unit(Unit('palce', UnitCategories.IN, Languages.CS, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('palců', UnitCategories.IN, Languages.CS, numbers_validity_more_than_5, False, None))
+
 units.add_unit(Unit('inch', UnitCategories.IN, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('inches', UnitCategories.IN, Languages.EN, numbers_validity_not_ones, False, None))
+
+units.add_unit(Unit('stopa čtvereční', UnitCategories.FT2, Languages.CS, numbers_validity_ones, False, None))
+units.add_unit(Unit('stopy čtvereční', UnitCategories.FT2, Languages.CS, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('stop čtverečních', UnitCategories.FT2, Languages.CS, numbers_validity_more_than_5, False, None))
 
 units.add_unit(Unit('square foot', UnitCategories.FT2, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('square-foot', UnitCategories.FT2, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('square feet', UnitCategories.FT2, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('square-feet', UnitCategories.FT2, Languages.EN, numbers_validity_not_ones, False, None))
 
+units.add_unit(Unit('stopa', UnitCategories.FT, Languages.CS, numbers_validity_ones, False, None))
+units.add_unit(Unit('stopy', UnitCategories.FT, Languages.CS, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('stop', UnitCategories.FT, Languages.CS, numbers_validity_more_than_5, False, None))
+
 units.add_unit(Unit('ft', UnitCategories.FT, Languages.EN, None, True, None))
 units.add_unit(Unit('foot', UnitCategories.FT, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('feet', UnitCategories.FT, Languages.EN, numbers_validity_not_ones, False, None))
+
+units.add_unit(Unit('yard', UnitCategories.YD, Languages.CS, numbers_validity_ones, False, None))
+units.add_unit(Unit('yardy', UnitCategories.YD, Languages.CS, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('yardů', UnitCategories.YD, Languages.CS, numbers_validity_more_than_5, False, None))
 
 units.add_unit(Unit('yd', UnitCategories.YD, Languages.EN, None, True, None))
 units.add_unit(Unit('yard', UnitCategories.YD, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('yards', UnitCategories.YD, Languages.EN, numbers_validity_not_ones, False, None))
 
+units.add_unit(Unit('čtvereční míle', UnitCategories.MI2, Languages.CS, numbers_validity_ones + numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('čtverečních mil', UnitCategories.MI2, Languages.CS, numbers_validity_more_than_5, False, None))
+
 units.add_unit(Unit('square mile', UnitCategories.MI2, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('square-mile', UnitCategories.MI2, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('square miles', UnitCategories.MI2, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('square-miles', UnitCategories.MI2, Languages.EN, numbers_validity_not_ones, False, None))
+
+units.add_unit(Unit('míle', UnitCategories.MI, Languages.CS, numbers_validity_ones + numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('mil', UnitCategories.MI, Languages.CS, numbers_validity_more_than_5, False, None))
 
 units.add_unit(Unit('mi', UnitCategories.MI, Languages.EN, None, True, None))
 units.add_unit(Unit('mile', UnitCategories.MI, Languages.EN, numbers_validity_ones, False, None))

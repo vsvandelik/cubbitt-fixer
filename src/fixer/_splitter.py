@@ -65,7 +65,7 @@ class StringToNumberUnitConverter:
             elif ch == custom_separator:
                 number_string.append('.')
                 decimal = True
-            elif ch.isalpha() or ch == '°':
+            elif ch.isalpha() or ch in units.get_single_char_units_symbols() or ch == '°':
                 unit = text[idx:].strip(' -')
                 break
 

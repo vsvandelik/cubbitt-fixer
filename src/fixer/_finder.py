@@ -56,20 +56,25 @@ class Finder:
 
         pairs = []
         for part in parts:
-            part = part[0]
+            part = part[0].strip(" .,-")
 
             # search for some approximately word before the number
             approximately = False
-            if re.search(f"({'|'.join(language.approximately_phrases)}) {part}", sentence):
+            if re.search(rf"({'|'.join(language.approximately_phrases)}) {part}", sentence):
                 approximately = True
 
             part_without_scaling = part
             scale_key = None
-            for scale in language.big_numbers_scale.keys():
-                if scale in part:
+            for scale in language.big_numbers_scale:
+                if re.search(rf"(\b|[0-9]){scale.strip('.')}([^a-zA-Z]|$)", part):
                     scale_key = scale
-                    part_without_scaling = part.replace(scale, '')
+                    part_without_scaling = part.replace(scale, '').strip(" -,.")
                     break
+
+            millions = False
+            if scale_key is None and re.search(r"\d[ ,.\d]*m(?!\w)", part) and re.sub(r"\d[ ,.\d]*m(?!\w)", "", part, re.UNICODE).strip() != "":
+                part_without_scaling = re.sub(r"([^a-zA-Z])m([^a-zA-Z]|$)", r"\1 \2", part).strip()
+                millions = True
 
             number, unit = Splitter.split_number_unit(part_without_scaling, language)
 
@@ -77,6 +82,8 @@ class Finder:
 
             if scale_key:
                 pairs[-1].add_scaling(language.big_numbers_scale[scale_key][0])
+            elif millions:
+                pairs[-1].add_scaling(1000000)
 
         return pairs
 
