@@ -32,7 +32,7 @@ class WordsNumbersConverter:
         'devatenáct': 19,
         'dvacet': 20,
         'třicet': 30,
-        'čtyřice': 40,
+        'čtyřicet': 40,
         'padesát': 50,
         'šedesát': 60,
         'sedmdesát': 70,
@@ -96,6 +96,9 @@ class WordsNumbersConverter:
     def __cz_converter(phrase: List[str]) -> Number:
         sum = 0
 
+        scaling = [Languages.CS.big_numbers_scale[word][0] for word in phrase if word in Languages.CS.big_numbers_scale.keys()]
+
+        last_scaled_number = 0
         last_number = 0
         previous_was_scaling = False
         for word in phrase:
@@ -103,13 +106,18 @@ class WordsNumbersConverter:
                 last_number += WordsNumbersConverter.__CS[word]
                 previous_was_scaling = False
             elif word in Languages.CS.big_numbers_scale.keys():
-                if previous_was_scaling:
-                    sum *= Languages.CS.big_numbers_scale[word][0]
+                actual_scaling = scaling.pop(0)
+                if previous_was_scaling and last_number > 0:
+                    last_number *= Languages.CS.big_numbers_scale[word][0]
                 elif last_number == 0:
-                    sum += Languages.CS.big_numbers_scale[word][0]
+                    last_number = Languages.CS.big_numbers_scale[word][0]
                 else:
-                    sum += last_number * Languages.CS.big_numbers_scale[word][0]
-                last_number = 0
+                    last_number = last_number * Languages.CS.big_numbers_scale[word][0]
+
+                if scaling and actual_scaling >= max(scaling):
+                    sum += last_number
+                    last_number = 0
+
                 previous_was_scaling = True
 
         if last_number > 0:
@@ -120,7 +128,7 @@ class WordsNumbersConverter:
     @staticmethod
     def __en_converter(phrase: List[str]) -> Number:
         if len(phrase) == 1 and phrase[0] in Languages.EN.big_numbers_scale:
-            return Languages.EN.big_numbers_scale[phrase[0]]
+            return Languages.EN.big_numbers_scale[phrase[0]][0]
         return w2n.word_to_num(" ".join(phrase))
 
 
