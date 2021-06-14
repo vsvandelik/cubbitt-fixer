@@ -43,7 +43,10 @@ class DecimalSeparatorFixer:
 
             same_in_translation = re.search(DecimalSeparatorFixer.__prepare_re_patter_one_number(number, self.target_lang), translated_sentence)
             if same_in_translation:
-                translated_sentence = translated_sentence.replace(number, DecimalSeparatorFixer.swap_separators(number))
+                if re.search(rf"{number}\s?(am|pm|a\.m\.|p\.m\.)", sentence_pair.source_text, re.IGNORECASE):
+                    translated_sentence = translated_sentence.replace(number, number.replace('.', ":"))
+                else:
+                    translated_sentence = translated_sentence.replace(number, DecimalSeparatorFixer.swap_separators(number))
                 replaced += 1
 
         if replaced == 0:
