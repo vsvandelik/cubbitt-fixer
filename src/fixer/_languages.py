@@ -1,4 +1,5 @@
 from typing import List, Dict
+import re
 
 
 class WrongLanguage(ValueError):
@@ -30,7 +31,7 @@ class Language:
         self.thousands_separator = thousands_separator
         self.big_numbers_scale = big_numbers_scale
 
-        self.big_numbers_scale_keys = "|".join(self.big_numbers_scale.keys())
+        self.big_numbers_scale_keys = "|".join([re.escape(i) for i in self.big_numbers_scale.keys()])
 
 
 class Languages:
@@ -50,6 +51,7 @@ class Languages:
         'set': (100, __SCALING_WORDS_VALIDITY['more_than_5']),
         'tisíce': (1000, __SCALING_WORDS_VALIDITY['2_3_4']),
         'tisíc': (1000, __SCALING_WORDS_VALIDITY['ones'] + __SCALING_WORDS_VALIDITY['more_than_5']),
+        'tis.': (1000, None),
         'miliony': (1000000, __SCALING_WORDS_VALIDITY['2_3_4']),
         'milióny': (1000000, __SCALING_WORDS_VALIDITY['2_3_4']),
         'milionů': (1000000, __SCALING_WORDS_VALIDITY['more_than_5']),
@@ -58,14 +60,18 @@ class Languages:
         'miliónu': (1000000, __SCALING_WORDS_VALIDITY['more_than_5']),
         'milion': (1000000, __SCALING_WORDS_VALIDITY['ones']),
         'milión': (1000000, __SCALING_WORDS_VALIDITY['ones']),
+        'mil.': (1000000, None),
         'miliarda': (1000000000, __SCALING_WORDS_VALIDITY['ones']),
         'miliardy': (1000000000, __SCALING_WORDS_VALIDITY['2_3_4']),
         'miliard': (1000000000, __SCALING_WORDS_VALIDITY['more_than_5']),
         'mld.': (1000000000, None),
+        'mld': (1000000000, None),
         'biliony': (1000000000000, __SCALING_WORDS_VALIDITY['2_3_4']),
         'bilionů': (1000000000000, __SCALING_WORDS_VALIDITY['more_than_5']),
         'bilionu': (1000000000000, __SCALING_WORDS_VALIDITY['more_than_5']),
         'bilion': (1000000000000, __SCALING_WORDS_VALIDITY['ones']),
+        'bil.': (1000000000000, None),
+        'bil': (1000000000000, None),
         'biliarda': (1000000000000000, __SCALING_WORDS_VALIDITY['ones']),
         'biliardy': (1000000000000000, __SCALING_WORDS_VALIDITY['2_3_4']),
         'biliard': (1000000000000000, __SCALING_WORDS_VALIDITY['more_than_5']),
@@ -87,6 +93,7 @@ class Languages:
         'billion': (1000000000, []),
         'billions': (1000000000, None),
         'bn': (1000000000, None),
+        'bn.': (1000000000, None),
         'trillion': (1000000000000, []),
         'trillions': (1000000000000, None),
         'quadrillion': (1000000000000000, []),
