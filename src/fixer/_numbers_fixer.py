@@ -53,13 +53,22 @@ class NumberFixer:
         self.source_lang = configuration.source_lang
         self.target_lang = configuration.target_lang
 
-
-
         # preparing regex patterns based on supported units
+        s_unit_before = units.get_regex_units_for_language_before_numbers(self.source_lang)
+        t_unit_before = units.get_regex_units_for_language_before_numbers(self.target_lang)
+        s_unit = units.get_regex_units_for_language(self.source_lang)
+        t_unit = units.get_regex_units_for_language(self.target_lang)
+        s_scale = self.source_lang.big_numbers_scale_keys
+        t_scale = self.target_lang.big_numbers_scale_keys
+        s_sep_thou = re.escape(self.source_lang.thousands_separator)
+        t_sep_thou = re.escape(self.target_lang.thousands_separator)
+        s_sep_dec = re.escape(self.source_lang.decimal_separator)
+        t_sep_dec = re.escape(self.target_lang.decimal_separator)
+
         self.number_patter_source = re.compile(
-            rf"((?:{units.get_regex_units_for_language_before_numbers(self.source_lang)})\s?\d+([ {self.source_lang.thousands_separator}]\d{{3}})*({self.source_lang.decimal_separator}\d+)?[\s-]?((?:{self.source_lang.big_numbers_scale_keys}|m)\b)?|\d+([ {self.source_lang.thousands_separator}]\d{{3}})*({self.source_lang.decimal_separator}\d+)?[\s-]?((?:{self.source_lang.big_numbers_scale_keys}|m)[\s-]?)?(?:{units.get_regex_units_for_language(self.source_lang)})(\b|\s|$|[,.\s])|\d+\'\d+\")")
+            rf"((?:{s_unit_before})\s?\d+([ {s_sep_thou}]\d{{3}})*({s_sep_dec}\d+)?[\s-]?((?:{s_scale}|m)\b)?|\d+([ {s_sep_thou}]\d{{3}})*({s_sep_dec}\d+)?[\s-]?((?:{s_scale}|m)(\b[\s-]?|[\s-]))?(?:{s_unit})(\b|\s|$|[,.\s])|\d+\'\d+\")")
         self.number_patter_target = re.compile(
-            rf"((?:{units.get_regex_units_for_language_before_numbers(self.target_lang)})\s?\d+([ {self.target_lang.thousands_separator}]\d{{3}})*({self.target_lang.decimal_separator}\d+)?[\s-]?((?:{self.target_lang.big_numbers_scale_keys}|m)\b)?|\d+([ {self.target_lang.thousands_separator}]\d{{3}})*({self.target_lang.decimal_separator}\d+)?[\s-]?((?:{self.target_lang.big_numbers_scale_keys}|m)[\s-]?)?(?:{units.get_regex_units_for_language(self.target_lang)})(\b|\s|$|[,.\s])|\d+\'\d+\")")
+            rf"((?:{t_unit_before})\s?\d+([ {t_sep_thou}]\d{{3}})*({t_sep_dec}\d+)?[\s-]?((?:{t_scale}|m)\b)?|\d+([ {t_sep_thou}]\d{{3}})*({t_sep_dec}\d+)?[\s-]?((?:{t_scale}|m)(\b[\s-]?|[\s-]))?(?:{t_unit})(\b|\s|$|[,.\s])|\d+\'\d+\")")
 
     def fix(self, sentence_pair: SentencePair) -> Tuple[Union[str, bool], List]:
         """Fix numbers problems in given sentence based on original text and translated text.

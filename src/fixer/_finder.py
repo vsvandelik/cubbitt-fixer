@@ -4,7 +4,7 @@ from typing import List
 from fixer._words_to_numbers_converter import WordsNumbersConverter
 
 from ._custom_types import *
-from ._languages import Language
+from ._languages import Language, Languages
 from ._splitter import StringToNumberUnitConverter as Splitter
 from ._units import Unit, units
 
@@ -67,7 +67,7 @@ class Finder:
             part_without_scaling = part
             scale_key = None
             for scale in language.big_numbers_scale:
-                if re.search(rf"(\b|[0-9]){scale.strip('.')}([^a-zA-Z]|$)", part):
+                if re.search(rf"(\b|[0-9]){scale}((?!\w)|$)", part):
                     scale_key = scale
                     part_without_scaling = part.replace(scale, '').strip(" -,.")
                     break
@@ -104,9 +104,13 @@ class Finder:
 
         #  Concatenate numbers as words together next to each other
         for data in lemmatization:
-            if data['upostag'] != 'NUM' and data['lemma'] not in language.big_numbers_scale.keys() and not (data['upostag'] == 'PUNC' and inside_number_phrase):
+            if data['upostag'] != 'NUM' and \
+                    data['lemma'] not in language.big_numbers_scale.keys() and \
+                    not (data['upostag'] == 'PUNCT' and inside_number_phrase) and \
+                    not (data['word'] == 'and' and language.acronym == Languages.EN.acronym and inside_number_phrase) and \
+                    not (data['word'] == 'a' and language.acronym == Languages.CS.acronym and inside_number_phrase):
                 if current_phrase:
-                    if current_phrase[-1]['upostag'] == 'PUNC':
+                    if current_phrase[-1]['upostag'] == 'PUNCT':
                         current_phrase.pop()
                     values.append(current_phrase)
                     current_phrase = []
@@ -120,7 +124,7 @@ class Finder:
             elif data['rangeStart'] <= last_end + 1:
                 current_phrase.append(data)
             else:
-                if current_phrase[-1]['upostag'] == 'PUNC':
+                if current_phrase[-1]['upostag'] == 'PUNCT':
                     current_phrase.pop()
                 values.append(current_phrase)
                 current_phrase = [data]
@@ -128,14 +132,14 @@ class Finder:
             last_end = data['rangeEnd']
 
         if current_phrase:
-            if current_phrase[-1]['upostag'] == 'PUNC':
+            if current_phrase[-1]['upostag'] == 'PUNCT':
                 current_phrase.pop()
             values.append(current_phrase)
 
         found_number_units = []
 
         for phrase in values:
-            if all(word['upostag'] == 'PUNC' or word['word'][0].isdigit() for word in phrase):
+            if all(word['upostag'] == 'PUNCT' or word['word'][0].isdigit() for word in phrase):
                 continue
             # if len(phrase) == 1 and phrase[0]['word'][0].isdigit():
             #    continue
@@ -170,7 +174,7 @@ class Finder:
             if scaling_words:
                 scaling_word = scaling_words[0]
 
-            number = WordsNumbersConverter.convert([data['lemma'] for data in phrase if data['upostag'] != 'PUNC'], language)
+            number = WordsNumbersConverter.convert([data['lemma'] for data in phrase if data['upostag'] != 'PUNCT'], language)
 
             found_number_units.append(NumberUnitFinderResult(number, units.get_unit_by_word(matched_unit, language), approximately, whole_match))
             found_number_units[-1].set_number_as_string(sentence[start:end + 1].strip(" -"))
