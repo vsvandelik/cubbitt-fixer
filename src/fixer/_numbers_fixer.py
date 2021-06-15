@@ -207,11 +207,8 @@ class NumberFixer:
                 if -1 < idx_dec_sep < idx_ths_sep and idx_ths_sep > -1:
                     continue
 
-                # TODO: How about numbers with scaling?
-
                 trg_number = trg_pair.number_as_string.strip() if trg_pair.number_as_string else trg_pair.text_part.replace(trg_pair.unit.word, '').strip()
 
-                swapped_separators = DecimalSeparatorFixer.swap_separators(src_number)
                 sentence = Replacer.replace_number(sentence, src_pair, trg_pair, self.target_lang, trg_number, src_pair.number)
                 change = True
 

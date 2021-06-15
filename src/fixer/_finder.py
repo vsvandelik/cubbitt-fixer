@@ -174,6 +174,10 @@ class Finder:
             if scaling_words:
                 scaling_word = scaling_words[0]
 
+            if language.acronym == Languages.EN.acronym and f"a {whole_match}":
+                whole_match = f"a {whole_match}"
+                start -= 2
+
             number = WordsNumbersConverter.convert([data['lemma'] for data in phrase if data['upostag'] != 'PUNCT'], language)
 
             found_number_units.append(NumberUnitFinderResult(number, units.get_unit_by_word(matched_unit, language), approximately, whole_match))
