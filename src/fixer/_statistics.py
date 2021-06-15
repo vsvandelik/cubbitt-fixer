@@ -22,3 +22,4 @@ class StatisticsMarks(Enum):
     NAMES_PROBLEM_UNFIXABLE = auto()
     NAMES_CORRECT = auto()
     SINGLE_NAME_SENTENCE = auto()
+    NUMBERS_MODIFIERS = auto()

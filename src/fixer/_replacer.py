@@ -1,7 +1,7 @@
 from ._custom_types import *
 from ._finder import NumberUnitFinderResult
-from ._languages import Language
-from ._units import Unit
+from ._languages import Language, Languages
+from ._units import Unit, units
 
 
 class Replacer:
@@ -11,7 +11,7 @@ class Replacer:
     """
 
     @staticmethod
-    def replace_unit(sentence: str, number_unit_part: str, number: Number, unit: Unit, new_unit: Unit) -> str:
+    def replace_unit(sentence: str, number_unit_part: str, number: Number, unit: Unit, new_unit: Unit, modifier: False) -> str:
         """Replace only unit within the broken sentence
 
         Based on new unit it decides whenever the unit should be put. When the new unit
@@ -19,13 +19,6 @@ class Replacer:
 
         For units before number with length 1 there is no space between unit and number.
         For units after number there is number is first letter of unit is alphabet char.
-
-        :param sentence: broken sentence
-        :param number_unit_part: part of the broken sentence with number and broken unit
-        :param number: parsed number
-        :param unit: parsed unit
-        :param new_unit: unit to replace with
-        :return: sentence with replaced unit
         """
 
         translated_number = number_unit_part.replace(unit.word, "").strip(' ,-')
@@ -34,6 +27,9 @@ class Replacer:
             new_number_unit_part = f"{new_unit.word}{translated_number}"
         elif new_unit.before_number:
             new_number_unit_part = f"{new_unit.word} {translated_number}"
+        elif modifier and new_unit.language.acronym == Languages.EN.acronym:
+            singular_unit = units.get_correct_unit(Languages.EN, 1, unit, new_unit, new_unit.category, modifier=True)
+            new_number_unit_part = f"{translated_number}-{singular_unit.word}"
         elif not new_unit.word[0].isalpha():
             new_number_unit_part = f"{translated_number}{new_unit.word}"
         else:
@@ -51,14 +47,15 @@ class Replacer:
         return sentence.replace(target_number_unit.text_part, with_new_number)
 
     @staticmethod
-    def replace_unit_number(sentence: str, original_number_unit: NumberUnitFinderResult, src_number: Number, new_number: Number, new_unit: Unit, language: Language) -> str:
-        # TODO: Adding scaling
-
+    def replace_unit_number(sentence: str, original_number_unit: NumberUnitFinderResult, src_number: Number, new_number: Number, new_unit: Unit, language: Language, *, modifier=False) -> str:
         new_number = Replacer.__round_to_valid_digits(src_number, new_number)
         new_number = Replacer.__add_scaling_word(original_number_unit, new_number, language)
 
         if new_unit.before_number:
             replacement = new_unit.word + (" " if len(new_unit.word) > 1 else "") + str(new_number)
+        elif modifier:
+            singular_unit = units.get_correct_unit(Languages.EN, 1, original_number_unit.unit, new_unit, new_unit.category, modifier=True)
+            replacement = str(new_number) + "-" + singular_unit.word
         else:
             replacement = str(new_number) + " " + new_unit.word
 

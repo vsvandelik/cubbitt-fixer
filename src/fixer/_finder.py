@@ -18,6 +18,7 @@ class NumberUnitFinderResult:
         self.text_part = text_part
         self.scaling = None
         self.number_as_string = None
+        self.modifier = False
 
     def add_scaling(self, scaling: int):
         self.scaling = scaling
@@ -79,6 +80,9 @@ class Finder:
             number, unit = Splitter.split_number_unit(part_without_scaling, language)
 
             pairs.append(NumberUnitFinderResult(number, unit, approximately, part))
+
+            if '-' in part:
+                pairs[-1].modifier = True
 
             if scale_key:
                 pairs[-1].add_scaling(language.big_numbers_scale[scale_key][0])
@@ -169,7 +173,10 @@ class Finder:
             number = WordsNumbersConverter.convert([data['lemma'] for data in phrase if data['upostag'] != 'PUNC'], language)
 
             found_number_units.append(NumberUnitFinderResult(number, units.get_unit_by_word(matched_unit, language), approximately, whole_match))
-            found_number_units[-1].set_number_as_string(sentence[start:end + 1])
+            found_number_units[-1].set_number_as_string(sentence[start:end + 1].strip(" -"))
+
+            if '-' in whole_match:
+                found_number_units[-1].modifier = True
 
             if scaling_word:
                 found_number_units[-1].scaling = language.big_numbers_scale[scaling_word][0]

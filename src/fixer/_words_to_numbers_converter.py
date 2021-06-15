@@ -102,7 +102,10 @@ class WordsNumbersConverter:
         last_number = 0
         previous_was_scaling = False
         for word in phrase:
-            if word in WordsNumbersConverter.__CS.keys():
+            if WordsNumbersConverter.__czech_shortcuts(word):
+                last_number += WordsNumbersConverter.__czech_shortcuts(word)
+                previous_was_scaling = False
+            elif word in WordsNumbersConverter.__CS.keys():
                 last_number += WordsNumbersConverter.__CS[word]
                 previous_was_scaling = False
             elif word in Languages.CS.big_numbers_scale.keys():
@@ -124,6 +127,14 @@ class WordsNumbersConverter:
             sum += last_number
 
         return sum
+
+    @staticmethod
+    def __czech_shortcuts(phrase: str):
+        parts = re.search(r"(jedn|dva|tři|čtyři|pět|šest|sedm|osm|devět)a(dvacet|třicet|čtyřicet|padesát|šedesát|sedmdesát|osmdesát|devadesát)", phrase, re.IGNORECASE)
+        if not parts:
+            return False
+
+        return WordsNumbersConverter.__CS[parts.group(2)] + WordsNumbersConverter.__CS[parts.group(1) if parts.group(1) != "jedn" else "jedna"]
 
     @staticmethod
     def __en_converter(phrase: List[str]) -> Number:

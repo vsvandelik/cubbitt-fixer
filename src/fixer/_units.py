@@ -254,7 +254,7 @@ class UnitsWrapper:
         self.__units_by_languages = {}
         self.__units_by_language_category = None
 
-    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, replacement_for: Unit = None, strict_category=None):
+    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, replacement_for: Unit = None, strict_category=None, *, modifier=False):
         if not strict_category:
             strict_category = original_unit.category
 
@@ -267,6 +267,9 @@ class UnitsWrapper:
 
             #if replacement_for and unit.dialect == replacement_for.dialect:
             #    score += 1
+
+            if modifier and '-' in unit.word:
+                score += 1
 
             if unit.abbreviation == original_unit.abbreviation:
                 score += 2

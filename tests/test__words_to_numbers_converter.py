@@ -50,3 +50,11 @@ def test_convert_110():
 
 def test_convert_1150():
     assert WordsNumbersConverter.convert(["tisíc", "sto", "padesát"], Languages.CS) == 1150
+
+
+def test_convert_61():
+    assert WordsNumbersConverter.convert(["jednašedesát"], Languages.CS) == 61
+
+
+def test_convert_25():
+    assert WordsNumbersConverter.convert(["pětadvacet"], Languages.CS) == 25

@@ -27,7 +27,7 @@ def report_result(data):
 
 
 def meters_metres_correction(sentence: str):
-    return sentence.replace("metres", "meters")
+    return sentence.replace("metre", "meter")
 
 
 def process_sentences_in_file(folder_path: str, filename: str, fixer_instance: Fixer, report_file):
