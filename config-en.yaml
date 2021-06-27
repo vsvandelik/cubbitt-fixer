@@ -1,5 +1,5 @@
-source_lang: cs
-target_lang: en
+source_lang: en
+target_lang: cs
 aligner: fast_align # [fast_align|order_based]
 lemmatizator: udpipe_offline # [udpipe_online|udpipe_offline]
 names_tagger: nametag # [nametag]
@@ -7,11 +7,11 @@ mode: fixing # [fixing|recalculating]
 base_tolerance: 0.1 # [0 - 1]
 approximately_tolerance: 0.2 # [0 - 1]
 target_units:
-    - imperial # [Imperial|SI]
-    - USD # [CZK|USD|GBP|EUR]
-    - F # [C|F]
+    - SI # [Imperial|SI]
+    - CZK # [CZK|USD|GBP|EUR]
+    - C # [C|F]
 exchange_rates: cnb # [cnb|*list of rates - USD, EUR, GBP*]
 tools: # sublist of [separators|names|units]
     #- separators
-    - names
-    #- units
+    #- names
+    - units
