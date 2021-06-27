@@ -35,6 +35,8 @@ class DecimalSeparatorFixer:
 
         source_parts = re.finditer(self.source_pattern, sentence_pair.source_text)
 
+        marks = []
+
         replaced = 0
         translated_sentence = sentence_pair.target_text
 
@@ -45,14 +47,16 @@ class DecimalSeparatorFixer:
             if same_in_translation:
                 if re.search(rf"{number}\s?(am|pm|a\.m\.|p\.m\.)", sentence_pair.source_text, re.IGNORECASE):
                     translated_sentence = translated_sentence.replace(number, number.replace('.', ":"))
+                    marks += [StatisticsMarks.DECIMAL_POINT_AS_TIME]
                 else:
                     translated_sentence = translated_sentence.replace(number, DecimalSeparatorFixer.swap_separators(number))
+                    marks += [StatisticsMarks.DECIMAL_SEPARATOR_PROBLEM]
                 replaced += 1
 
         if replaced == 0:
             return True, []
         else:
-            return translated_sentence, [StatisticsMarks.DECIMAL_SEPARATOR_PROBLEM]
+            return translated_sentence, marks
 
     @staticmethod
     def __prepare_re_patter_one_number(number: str, language: Language) -> str:

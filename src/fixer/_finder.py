@@ -146,6 +146,9 @@ class Finder:
             elif phrase[0]['word'][0].isdigit() and phrase[1]['word'] in language.big_numbers_scale.keys():
                 continue
 
+            elif phrase[0]['word'][0].isdigit() and phrase[1]['upostag'] == "PUNCT" and phrase[2]['word'][0].isdigit() and phrase[3]['word'] in language.big_numbers_scale.keys():
+                continue
+
             start = phrase[0]['rangeStart']
             end = phrase[-1]['rangeEnd']
             matched_unit = None
