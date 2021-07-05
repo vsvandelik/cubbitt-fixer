@@ -637,7 +637,7 @@ units.add_unit(Unit('mile', UnitCategories.MI, Languages.EN, numbers_validity_on
 units.add_unit(Unit('miles', UnitCategories.MI, Languages.EN, numbers_validity_not_ones, False, None))
 
 #units.add_unit(Unit('pounds', UnitCategories.LB, Languages.EN, numbers_validity_not_ones, False, None))
-"""
+
 units.add_unit(Unit('kč', UnitCategories.CZK, Languages.CS, None, True, None))
 units.add_unit(Unit(',-kč', UnitCategories.CZK, Languages.CS, None, True, None))
 units.add_unit(Unit('Kč', UnitCategories.CZK, Languages.CS, None, True, None))
@@ -685,4 +685,3 @@ units.add_unit(Unit('£', UnitCategories.GBP, Languages.EN, None, True, None, Tr
 units.add_unit(Unit('GBP', UnitCategories.GBP, Languages.EN, None, True, None, True))
 units.add_unit(Unit('pounds', UnitCategories.GBP, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('pound', UnitCategories.GBP, Languages.EN, numbers_validity_ones, False, None))
-"""
