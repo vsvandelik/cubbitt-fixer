@@ -46,8 +46,10 @@ class DecimalSeparatorFixer:
             same_in_translation = re.search(DecimalSeparatorFixer.__prepare_re_patter_one_number(number, self.target_lang), translated_sentence)
             if same_in_translation:
                 if re.search(rf"{number}\s?(am|pm|a\.m\.|p\.m\.)", sentence_pair.source_text, re.IGNORECASE):
-                    translated_sentence = translated_sentence.replace(number, number.replace('.', ":"))
-                    marks += [StatisticsMarks.DECIMAL_POINT_AS_TIME]
+                    hours, minutes = number.split('.')
+                    if int(hours) <= 12 and int(minutes) < 60:
+                        translated_sentence = translated_sentence.replace(number, number.replace('.', ":"))
+                        marks += [StatisticsMarks.DECIMAL_POINT_AS_TIME]
                 else:
                     translated_sentence = translated_sentence.replace(number, DecimalSeparatorFixer.swap_separators(number))
                     marks += [StatisticsMarks.DECIMAL_SEPARATOR_PROBLEM]
@@ -73,8 +75,8 @@ class DecimalSeparatorFixer:
         thousands_sep = re.escape(language.thousands_separator)
         decimal_sep = re.escape(language.decimal_separator)
 
-        numbers_thousands_decimal_separator = r"(\d+([" + thousands_sep + "]\d{3})*" + decimal_sep + "\d+)"
-        numbers_thousands_separator = r"(\d+([" + thousands_sep + "]\d{3})+)"
+        numbers_thousands_decimal_separator = r"(\d+((" + thousands_sep + "| )\d{3})*" + decimal_sep + "\d+)"
+        numbers_thousands_separator = r"(\d+((" + thousands_sep + "| )\d{3})+)"
 
         return re.compile(f"([^0-9{thousands_sep}{decimal_sep}]|^)"  # before number
                           f"(?P<number>{numbers_thousands_decimal_separator}|{numbers_thousands_separator})"
