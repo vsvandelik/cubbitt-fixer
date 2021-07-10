@@ -5,6 +5,7 @@ from fixer._words_to_numbers_converter import WordsNumbersConverter
 
 from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._finder import Finder, NumberUnitFinderResult
+from ._languages import Languages
 from ._replacer import Replacer
 from ._sentence_pair import SentencePair
 from ._splitter import StringToNumberUnitConverter as Splitter
@@ -170,7 +171,7 @@ class NumberFixer:
 
             if self.configuration.mode == FixerModes.FIXING:
                 suitable_unit = units.get_correct_unit(self.target_lang, src_pair.number, src_pair.unit, trg_pair.unit)
-                sentence = Replacer.replace_unit(sentence, trg_pair.text_part, trg_pair.number, trg_pair.unit, suitable_unit, trg_pair.modifier)
+                sentence = Replacer.replace_unit(sentence, trg_pair.text_part, trg_pair.number, trg_pair.unit, suitable_unit, self.target_lang, trg_pair.modifier, src_pair.scaling)
             else:
                 converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
                 if converted_unit and converted_unit:

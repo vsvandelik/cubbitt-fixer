@@ -11,7 +11,7 @@ class Replacer:
     """
 
     @staticmethod
-    def replace_unit(sentence: str, number_unit_part: str, number: Number, unit: Unit, new_unit: Unit, modifier: False) -> str:
+    def replace_unit(sentence: str, number_unit_part: str, number: Number, unit: Unit, new_unit: Unit, language, modifier=False, scaling=False) -> str:
         """Replace only unit within the broken sentence
 
         Based on new unit it decides whenever the unit should be put. When the new unit
@@ -23,6 +23,9 @@ class Replacer:
 
         translated_number = number_unit_part.replace(unit.word, "").strip(' ,-')
 
+        #if new_unit.before_number and scaling:
+        #    non_abbreviation_unit = units.get_correct_unit(language, number, unit, new_unit, new_unit.category, abbreviation=False)
+        #    new_number_unit_part = f"{translated_number} {non_abbreviation_unit.word}"
         if new_unit.before_number and len(new_unit.word) == 1:
             new_number_unit_part = f"{new_unit.word}{translated_number}"
         elif new_unit.before_number:
@@ -41,7 +44,7 @@ class Replacer:
     def replace_number(sentence: str, source_number_unit: NumberUnitFinderResult, target_number_unit: NumberUnitFinderResult, language: Language, original_target_number: str, new_number: Number) -> str:
 
         new_number = Replacer.__round_to_valid_digits(source_number_unit.number, new_number)
-        new_number = Replacer.__add_scaling_word(target_number_unit, new_number, language)
+        new_number, _ = Replacer.__add_scaling_word(target_number_unit, new_number, language)
 
         with_new_number = target_number_unit.text_part.replace(original_target_number, new_number)
         return sentence.replace(target_number_unit.text_part, with_new_number)
@@ -49,10 +52,13 @@ class Replacer:
     @staticmethod
     def replace_unit_number(sentence: str, original_number_unit: NumberUnitFinderResult, src_number: Number, new_number: Number, new_unit: Unit, language: Language, *, modifier=False) -> str:
         new_number = Replacer.__round_to_valid_digits(src_number, new_number)
-        new_number = Replacer.__add_scaling_word(original_number_unit, new_number, language)
+        new_number, used_scaling = Replacer.__add_scaling_word(original_number_unit, new_number, language)
 
-        if new_unit.before_number:
+        if new_unit.before_number: # and not used_scaling:
             replacement = new_unit.word + (" " if len(new_unit.word) > 1 else "") + str(new_number)
+        #elif new_unit.before_number:
+        #    non_abbreviation_unit = units.get_correct_unit(language, new_number, original_number_unit.unit, new_unit, new_unit.category, abbreviation=False)
+        #    replacement = new_number + " " + non_abbreviation_unit.word
         elif modifier:
             singular_unit = units.get_correct_unit(Languages.EN, 1, original_number_unit.unit, new_unit, new_unit.category, modifier=True)
             replacement = str(new_number) + "-" + singular_unit.word
@@ -85,7 +91,7 @@ class Replacer:
     @staticmethod
     def __add_scaling_word(original_number: NumberUnitFinderResult, new_number: Number, language: Language):
         if not original_number.scaling:
-            return str(new_number)
+            return str(new_number), False
 
         last_possible_scaling = None
         for word, scaling_tuple in language.big_numbers_scale.items():
@@ -93,16 +99,16 @@ class Replacer:
                 last_possible_scaling = scaling_tuple[0]
 
         if not last_possible_scaling:
-            return str(new_number)
+            return str(new_number), False
 
         divided = new_number / last_possible_scaling
         divided = int(divided) if divided.is_integer() else divided
 
         word = Replacer.__find_correct_scaling_word(last_possible_scaling, divided, language)
         if not word:
-            return str(new_number)
+            return str(new_number), False
 
-        return str(divided) + " " + word
+        return str(divided) + " " + word, True
 
     @staticmethod
     def __find_correct_scaling_word(scaling_number, number, language):

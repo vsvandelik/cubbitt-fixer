@@ -67,7 +67,7 @@ class DecimalSeparatorFixer:
         decimal_sep = re.escape(language.decimal_separator)
         number = re.escape(number)
 
-        return rf"([^0-9{thousands_sep}{decimal_sep}]|^){number}(\.$|,? ?[^0-9]|$)"
+        return rf"([^0-9{thousands_sep}{decimal_sep}]|^){number}(\.$|,? ?[^0-9,\.]|$)"
 
     @staticmethod
     def __prepare_re_pattern_all_numbers(language: Language) -> re.Pattern:
