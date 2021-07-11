@@ -23,7 +23,7 @@ class Replacer:
 
         translated_number = number_unit_part.replace(unit.word, "").strip(' ,-')
 
-        #if new_unit.before_number and scaling:
+        # if new_unit.before_number and scaling:
         #    non_abbreviation_unit = units.get_correct_unit(language, number, unit, new_unit, new_unit.category, abbreviation=False)
         #    new_number_unit_part = f"{translated_number} {non_abbreviation_unit.word}"
         if new_unit.before_number and len(new_unit.word) == 1:
@@ -54,9 +54,9 @@ class Replacer:
         new_number = Replacer.__round_to_valid_digits(src_number, new_number)
         new_number, used_scaling = Replacer.__add_scaling_word(original_number_unit, new_number, language)
 
-        if new_unit.before_number: # and not used_scaling:
+        if new_unit.before_number:  # and not used_scaling:
             replacement = new_unit.word + (" " if len(new_unit.word) > 1 else "") + str(new_number)
-        #elif new_unit.before_number:
+        # elif new_unit.before_number:
         #    non_abbreviation_unit = units.get_correct_unit(language, new_number, original_number_unit.unit, new_unit, new_unit.category, abbreviation=False)
         #    replacement = new_number + " " + non_abbreviation_unit.word
         elif modifier:
@@ -90,8 +90,9 @@ class Replacer:
 
     @staticmethod
     def __add_scaling_word(original_number: NumberUnitFinderResult, new_number: Number, language: Language):
-        if not original_number.scaling:
-            return str(new_number), False
+        #if not original_number.scaling:
+        #    return str(new_number), False
+        # TODO: Smarter deciding
 
         last_possible_scaling = None
         for word, scaling_tuple in language.big_numbers_scale.items():
@@ -137,3 +138,33 @@ class Replacer:
                     return word
 
         return None
+
+    @staticmethod
+    def construct_right_form_of_number(language: Language, number: Number) -> str:
+        string_number = str(number)
+        parts = string_number.split(".")
+        before_dot = parts[0]
+        index = len(before_dot) - 1
+        digits_count = 0
+        result = []
+
+        thousands_separator = " " if language == Languages.CS else ","
+
+        while index >= 0:
+            if digits_count == 3:
+                result.append(thousands_separator)
+                digits_count = 0
+
+            result.append(before_dot[index])
+            index -= 1
+            digits_count += 1
+
+
+
+
+        before_dot = "".join(reversed(result))
+
+        if len(parts) > 1:
+            return before_dot + language.decimal_separator + parts[1]
+        else:
+            return before_dot

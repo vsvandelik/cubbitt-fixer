@@ -1,17 +1,16 @@
 import re
-from typing import List
+from typing import List, Optional
 
-from fixer._words_to_numbers_converter import WordsNumbersConverter
+from fixer._words_to_numbers_converter import WordsNumbersConverter, WordsNumbersConverterException
 
 from ._custom_types import *
 from ._languages import Language, Languages
-from ._splitter import StringToNumberUnitConverter as Splitter
 from ._units import Unit, units
 
 
 class NumberUnitFinderResult:
 
-    def __init__(self, number: Number, unit: Unit, approximately: bool, text_part: str):
+    def __init__(self, number: Number, unit: Optional[Unit], approximately: bool, text_part: str):
         self.number = number
         self.unit = unit
         self.approximately = approximately
@@ -56,40 +55,53 @@ class Finder:
             return []
 
         pairs = []
-        for part in parts:
-            part = part[0].strip(" .,-")
+        for part in re.finditer(pattern, sentence):
+            whole_match = part.group(0).strip(" .,-")
 
             # search for some approximately word before the number
             approximately = False
-            if re.search(rf"({'|'.join(language.approximately_phrases)}) {part}", sentence):
+            if re.search(rf"({'|'.join(language.approximately_phrases)}) {whole_match}", sentence):
                 approximately = True
 
-            part_without_scaling = part
             scale_key = None
-            for scale in language.big_numbers_scale:
-                if re.search(rf"(\b|[0-9]){scale}((?!\w)|$)", part):
-                    scale_key = scale
-                    part_without_scaling = part.replace(scale, '').strip(" -,.")
-                    break
+            if part.group("scaling") or part.group("a_scaling"):
+                scale_key = Finder.__get_value_from_group_match(part, "scaling")
 
-            millions = False
-            if scale_key is None and re.search(r"\d[ ,.\d]*m(?!\w)", part) and re.sub(r"\d[ ,.\d]*m(?!\w)", "", part, re.UNICODE).strip() != "":
-                part_without_scaling = re.sub(r"([^a-zA-Z])m([^a-zA-Z]|$)", r"\1 \2", part).strip()
-                millions = True
+            try:
+                matched_number = Finder.__get_value_from_group_match(part, "number")
+                if language == Languages.CS:
+                    matched_number = matched_number.replace(".", "").replace(" ", "").replace(",", ".")
+                elif language == Languages.EN:
+                    matched_number = matched_number.replace(",", "").replace(" ", "")
+                number = float(matched_number) if "." in matched_number else int(matched_number)
+            except ValueError:
+                continue
 
-            number, unit = Splitter.split_number_unit(part_without_scaling, language)
+            unit = None
+            if part.group("unit") or part.group("a_unit"):
+                unit = units.get_unit_by_word(Finder.__get_value_from_group_match(part, "unit"), language)
 
-            pairs.append(NumberUnitFinderResult(number, unit, approximately, part))
+            if scale_key == "m" and not unit:
+                continue  # unsure if it is the scaling "m" or the unit "m"
 
-            if '-' in part:
+            if re.search(f"{number}[-:]\d+|\d+[-:]{number}", sentence):
+                continue  # skip time and sport score
+
+            pairs.append(NumberUnitFinderResult(number, unit, approximately, whole_match))
+
+            if unit and '-' + unit.word in whole_match:
                 pairs[-1].modifier = True
 
-            if scale_key:
-                pairs[-1].add_scaling(language.big_numbers_scale[scale_key][0])
-            elif millions:
+            if scale_key and scale_key == "m":
                 pairs[-1].add_scaling(1000000)
+            elif scale_key:
+                pairs[-1].add_scaling(language.big_numbers_scale[scale_key.lower()][0])
 
         return pairs
+
+    @staticmethod
+    def __get_value_from_group_match(match_object: re.Match, group_name):
+        return match_object.group(group_name) if match_object.group(group_name) else match_object.group("a_" + group_name)
 
     @staticmethod
     def find_word_number_unit(sentence: str, language: Language, lemmatization):
@@ -110,7 +122,7 @@ class Finder:
                     not (data['word'] == 'and' and language.acronym == Languages.EN.acronym and inside_number_phrase) and \
                     not (data['word'] == 'a' and language.acronym == Languages.CS.acronym and inside_number_phrase):
                 if current_phrase:
-                    if current_phrase[-1]['upostag'] == 'PUNCT':
+                    while current_phrase[-1]['upostag'] == 'PUNCT' or current_phrase[-1]['word'] in ['and', 'a']:
                         current_phrase.pop()
                     values.append(current_phrase)
                     current_phrase = []
@@ -124,7 +136,7 @@ class Finder:
             elif data['rangeStart'] <= last_end + 1:
                 current_phrase.append(data)
             else:
-                if current_phrase[-1]['upostag'] == 'PUNCT':
+                while current_phrase[-1]['upostag'] == 'PUNCT' or current_phrase[-1]['word'] in ['and', 'a']:
                     current_phrase.pop()
                 values.append(current_phrase)
                 current_phrase = [data]
@@ -132,27 +144,27 @@ class Finder:
             last_end = data['rangeEnd']
 
         if current_phrase:
-            if current_phrase[-1]['upostag'] == 'PUNCT':
+            while current_phrase[-1]['upostag'] == 'PUNCT' or current_phrase[-1]['word'] in ['and', 'a']:
                 current_phrase.pop()
             values.append(current_phrase)
 
         found_number_units = []
 
         for phrase in values:
-            if all(word['upostag'] == 'PUNCT' or word['word'][0].isdigit() for word in phrase):
+            if all(word['upostag'] == 'PUNCT' or word['word'][0].isdigit() or word['word'] == "and" or word['word'] == "a" for word in phrase):
                 continue
             # if len(phrase) == 1 and phrase[0]['word'][0].isdigit():
             #    continue
-            elif phrase[0]['word'][0].isdigit() and phrase[1]['word'] in language.big_numbers_scale.keys():
+            elif phrase[0]['word'][0].isdigit() and phrase[1]['lemma'] in language.big_numbers_scale.keys():
                 continue
 
-            elif phrase[0]['word'][0].isdigit() and phrase[1]['upostag'] == "PUNCT" and phrase[2]['word'][0].isdigit() and phrase[3]['word'] in language.big_numbers_scale.keys():
+            elif phrase[0]['word'][0].isdigit() and phrase[1]['upostag'] == "PUNCT" and phrase[2]['word'][0].isdigit() and phrase[3]['lemma'] in language.big_numbers_scale.keys():
                 continue
 
             start = phrase[0]['rangeStart']
             end = phrase[-1]['rangeEnd']
             matched_unit = None
-            whole_match = None
+            whole_match = sentence[start:end]
             for unit in re.finditer(rf"\b({units.get_regex_units_for_language(language)})\b", sentence):
                 if unit.group(0).strip() in units.get_regex_units_for_language_before_numbers_list(language) and 0 <= (start - unit.end()) <= 2:
                     matched_unit = unit.group(0)
@@ -163,33 +175,38 @@ class Finder:
                     whole_match = sentence[start:unit.end()]
                     break
 
-            if not matched_unit:
-                continue
+            if matched_unit:
+                matched_unit = units.get_unit_by_word(matched_unit, language)
 
             # search for some approximately word before the number
             approximately = False
-            if re.search(f"({'|'.join(language.approximately_phrases)}) {whole_match}", sentence):
+            if re.search(f"({'|'.join(language.approximately_phrases)}) {re.escape(whole_match)}", sentence):
                 approximately = True
 
             # search for scaling word
-            scaling_words = [word['word'] for word in phrase if word['word'] in language.big_numbers_scale]
+            scaling_words = [word['word'] for word in phrase if word['word'].lower() in language.big_numbers_scale]
             scaling_word = None
             if scaling_words:
                 scaling_word = scaling_words[0]
 
-            if language.acronym == Languages.EN.acronym and f"a {whole_match}":
+            if language.acronym == Languages.EN.acronym and f"a {re.escape(whole_match)}" in sentence:
                 whole_match = f"a {whole_match}"
                 start -= 2
 
-            number = WordsNumbersConverter.convert([data['lemma'] for data in phrase if data['upostag'] != 'PUNCT'], language)
+            try:
+                number = WordsNumbersConverter.convert([data['lemma'] for data in phrase if data['upostag'] != 'PUNCT'], language)
+            except WordsNumbersConverterException:
+                continue
+            except ValueError:
+                continue
 
-            found_number_units.append(NumberUnitFinderResult(number, units.get_unit_by_word(matched_unit, language), approximately, whole_match))
+            found_number_units.append(NumberUnitFinderResult(number, matched_unit, approximately, whole_match))
             found_number_units[-1].set_number_as_string(sentence[start:end + 1].strip(" -"))
 
-            if '-' in whole_match:
+            if matched_unit and '-' + matched_unit.word in whole_match:
                 found_number_units[-1].modifier = True
 
             if scaling_word:
-                found_number_units[-1].scaling = language.big_numbers_scale[scaling_word][0]
+                found_number_units[-1].scaling = language.big_numbers_scale[scaling_word.lower()][0]
 
         return found_number_units

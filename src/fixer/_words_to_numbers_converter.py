@@ -7,10 +7,15 @@ from ._custom_types import *
 from ._languages import Languages, Language
 
 
+class WordsNumbersConverterException(Exception):
+    pass
+
+
 class WordsNumbersConverter:
     __CS = {
         'nula': 0,
         'jedna': 1,
+        'jeden': 1,
         'dva': 2,
         'dvě': 2,
         'tři': 3,
@@ -71,8 +76,8 @@ class WordsNumbersConverter:
         'ninety': 90
     }
 
-    __CS_words_regex = re.compile(r"\b(" + "|".join(__CS.keys()) + r")\b")
-    __EN_words_regex = re.compile(r"\b(" + "|".join(__EN.keys()) + r")\b")
+    __CS_words_regex = re.compile(r"\b(" + "|".join(__CS.keys()) + r")\b", re.IGNORECASE)
+    __EN_words_regex = re.compile(r"\b(" + "|".join(__EN.keys()) + r")\b", re.IGNORECASE)
 
     @staticmethod
     def contains_text_numbers(sentence: str, language: Language):
@@ -122,6 +127,9 @@ class WordsNumbersConverter:
                     last_number = 0
 
                 previous_was_scaling = True
+
+            else:
+                raise WordsNumbersConverterException("invalid word to convert")
 
         if last_number > 0:
             sum += last_number

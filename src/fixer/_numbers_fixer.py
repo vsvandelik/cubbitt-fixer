@@ -3,26 +3,29 @@ from typing import Union, List, Tuple, Dict
 
 from fixer._words_to_numbers_converter import WordsNumbersConverter
 
-from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._finder import Finder, NumberUnitFinderResult
-from ._languages import Languages
 from ._replacer import Replacer
 from ._sentence_pair import SentencePair
 from ._splitter import StringToNumberUnitConverter as Splitter
 from ._statistics import StatisticsMarks
 from ._units import units
 from .fixer_configurator import FixerConfigurator, FixerModes
+from ._languages import Languages
 
 
 class Relationship:
 
     def __init__(self):
+        self.only_numbers_same = set()
+        self.only_numbers_different = set()
         self.same_number_same_unit = set()
         self.same_number_different_unit = set()
         self.different_number_same_unit = set()
         self.different_number_different_unit = set()
 
     def remove_src_sentence(self, idx: int):
+        self.only_numbers_same.discard(idx)
+        self.only_numbers_different.discard(idx)
         self.same_number_same_unit.discard(idx)
         self.same_number_different_unit.discard(idx)
         self.different_number_same_unit.discard(idx)
@@ -30,10 +33,12 @@ class Relationship:
 
     def get_list_by_level(self, level: int):
         levels = {
-            0: self.same_number_same_unit,
-            1: self.same_number_different_unit,
-            2: self.different_number_same_unit,
-            3: self.different_number_different_unit
+            0: self.only_numbers_same,
+            1: self.only_numbers_different,
+            2: self.same_number_same_unit,
+            3: self.same_number_different_unit,
+            4: self.different_number_same_unit,
+            5: self.different_number_different_unit
         }
         return levels[level]
 
@@ -67,9 +72,9 @@ class NumberFixer:
         t_sep_dec = re.escape(self.target_lang.decimal_separator)
 
         self.number_patter_source = re.compile(
-            rf"((?:{s_unit_before})\s?\d+([ {s_sep_thou}]\d{{3}})*({s_sep_dec}\d+)?[\s-]?((?:{s_scale}|m)\b)?|\d+([ {s_sep_thou}]\d{{3}})*({s_sep_dec}\d+)?[\s-]?((?:{s_scale}|m)(\b[\s-]?|[\s-]))?(?:{s_unit})(\b|\s|$|[,.\s])|\d+\'\d+\")")
+            rf"(?:(?P<unit>{s_unit_before})\s?(?P<number>\d+(?:[ {s_sep_thou}]\d{{3}})*(?:{s_sep_dec}\d+)?)[\s-]?(?:(?P<scaling>{s_scale}|m)\b)?|(?P<a_number>\d+(?:[ {s_sep_thou}]\d{{3}})*({s_sep_dec}\d+)?)[\s-]?(?:(?P<a_scaling>{s_scale}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{s_unit})?(?:\b|\s|$|[,.\s])|\d+\'\d+\")", re.IGNORECASE)
         self.number_patter_target = re.compile(
-            rf"((?:{t_unit_before})\s?\d+([ {t_sep_thou}]\d{{3}})*({t_sep_dec}\d+)?[\s-]?((?:{t_scale}|m)\b)?|\d+([ {t_sep_thou}]\d{{3}})*({t_sep_dec}\d+)?[\s-]?((?:{t_scale}|m)(\b[\s-]?|[\s-]))?(?:{t_unit})(\b|\s|$|[,.\s])|\d+\'\d+\")")
+            rf"(?:(?P<unit>{t_unit_before})\s?(?P<number>\d+(?:[ {t_sep_thou}]\d{{3}})*(?:{t_sep_dec}\d+)?)[\s-]?(?:(?P<scaling>{t_scale}|m)\b)?|(?P<a_number>\d+(?:[ {t_sep_thou}]\d{{3}})*({t_sep_dec}\d+)?)[\s-]?(?:(?P<a_scaling>{t_scale}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{t_unit})?(?:\b|\s|$|[,.\s])|\d+\'\d+\")", re.IGNORECASE)
 
     def fix(self, sentence_pair: SentencePair) -> Tuple[Union[str, bool], List]:
         """Fix numbers problems in given sentence based on original text and translated text.
@@ -118,10 +123,12 @@ class NumberFixer:
         relationships = self.__prepare_src_trg_pairs_relationships(src_lang_numbers_units, trg_lang_numbers_units)
 
         levels = {
-            0: self.__process_sentence_same_number_same_unit,
-            1: self.__process_sentence_same_number_different_unit,
-            2: self.__process_sentence_different_number_same_unit,
-            3: self.__process_sentence_different_number_different_unit,
+            0: self.__process_only_numbers_same,
+            1: self.__process_only_numbers_different,
+            2: self.__process_sentence_same_number_same_unit,
+            3: self.__process_sentence_same_number_different_unit,
+            4: self.__process_sentence_different_number_same_unit,
+            5: self.__process_sentence_different_number_different_unit,
         }
 
         result_sentence = sentence_pair.target_text
@@ -135,6 +142,21 @@ class NumberFixer:
             return True, marks
         else:
             return result_sentence, marks
+
+    def __process_only_numbers_same(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str):
+        return sentence, len(bindings) * [StatisticsMarks.ONLY_NUMBER_SAME]
+
+    def __process_only_numbers_different(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        if not len(bindings):
+            return sentence, []
+
+        for binding_trg, binding_src in bindings:
+            src_pair = src_lang_numbers_units[binding_src]
+            trg_pair = trg_lang_numbers_units[binding_trg]
+
+            sentence = Replacer.replace_number(sentence, src_pair, trg_pair, self.target_lang, trg_pair.text_part, src_pair.number)
+
+        return sentence, len(bindings) * [StatisticsMarks.ONLY_NUMBER_DIFFERENT]
 
     def __process_sentence_same_number_same_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
         if self.configuration.mode == FixerModes.FIXING or not len(bindings):
@@ -277,8 +299,8 @@ class NumberFixer:
             if not some_change:
                 break
 
-        if len(relationships) and level == 3:
-            return results
+        if len(relationships) and level in [1, 5]:
+            return results  # skip random matching the ones on the generic levels
 
         to_remove = []
         for trg_idx, target_sentence in relationships.items():
@@ -301,8 +323,20 @@ class NumberFixer:
 
             for idx, src_pair in enumerate(src_lang_numbers_units):
 
+                # one with unit and one without
+                if (trg_pair.unit and not src_pair.unit) or (src_pair.unit and not trg_pair.unit):
+                    continue
+
+                # both same numbers without units
+                elif not trg_pair.unit and not src_pair.unit and trg_pair.number == src_pair.number:
+                    relationship.only_numbers_same.add(idx)
+
+                # both numbers without units but different
+                elif not trg_pair.unit and not src_pair.unit:
+                    relationship.only_numbers_different.add(idx)
+
                 # same number, same unit
-                if src_pair.number == trg_pair.number and src_pair.unit.category == trg_pair.unit.category:
+                elif src_pair.number == trg_pair.number and src_pair.unit.category == trg_pair.unit.category:
                     relationship.same_number_same_unit.add(idx)
 
                 # same number, different unit

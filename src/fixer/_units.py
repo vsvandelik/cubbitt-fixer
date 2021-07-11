@@ -441,11 +441,13 @@ units.add_unit(Unit('meter per second', UnitCategories.MS, Languages.EN, numbers
 units.add_unit(Unit('metres per second', UnitCategories.MS, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('metre per second', UnitCategories.MS, Languages.EN, numbers_validity_ones, False, None))
 
+units.add_unit(Unit('m2', UnitCategories.M2, Languages.CS, None, True, None))
 units.add_unit(Unit('metr čtvereční', UnitCategories.M2, Languages.CS, numbers_validity_ones, False, None))
 units.add_unit(Unit('metru čtverečního', UnitCategories.M2, Languages.CS, numbers_validity_decimal, False, None))
 units.add_unit(Unit('metry čtvereční', UnitCategories.M2, Languages.CS, numbers_validity_2_3_4, False, None))
 units.add_unit(Unit('metrů čtverečních', UnitCategories.M2, Languages.CS, numbers_validity_more_than_5, False, None))
 
+units.add_unit(Unit('m2', UnitCategories.M2, Languages.EN, None, True, None))
 units.add_unit(Unit('square meter', UnitCategories.M2, Languages.EN, numbers_validity_ones, False, UnitDialect.AmE))
 units.add_unit(Unit('square meters', UnitCategories.M2, Languages.EN, numbers_validity_not_ones, False, UnitDialect.AmE))
 units.add_unit(Unit('square metre', UnitCategories.M2, Languages.EN, numbers_validity_ones, False, None))
@@ -453,11 +455,13 @@ units.add_unit(Unit('square metres', UnitCategories.M2, Languages.EN, numbers_va
 units.add_unit(Unit('square-metre', UnitCategories.M2, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('square-meter', UnitCategories.M2, Languages.EN, numbers_validity_ones, False, UnitDialect.AmE))
 
+units.add_unit(Unit('km2', UnitCategories.KM2, Languages.CS, None, True, None))
 units.add_unit(Unit('kilometr čtvereční', UnitCategories.KM2, Languages.CS, numbers_validity_ones, False, None))
 units.add_unit(Unit('kilometru čtverečního', UnitCategories.KM2, Languages.CS, numbers_validity_decimal, False, None))
 units.add_unit(Unit('kilometry čtvereční', UnitCategories.KM2, Languages.CS, numbers_validity_2_3_4, False, None))
 units.add_unit(Unit('kilometrů čtverečních', UnitCategories.KM2, Languages.CS, numbers_validity_more_than_5, False, None))
 
+units.add_unit(Unit('km2', UnitCategories.KM2, Languages.EN, None, True, None))
 units.add_unit(Unit('square kilometer', UnitCategories.KM2, Languages.EN, numbers_validity_ones, False, UnitDialect.AmE))
 units.add_unit(Unit('square kilometers', UnitCategories.KM2, Languages.EN, numbers_validity_not_ones, False, UnitDialect.AmE))
 units.add_unit(Unit('square kilometre', UnitCategories.KM2, Languages.EN, numbers_validity_ones, False, None))
@@ -465,11 +469,13 @@ units.add_unit(Unit('square kilometres', UnitCategories.KM2, Languages.EN, numbe
 units.add_unit(Unit('square-kilometre', UnitCategories.KM2, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('square-kilometer', UnitCategories.KM2, Languages.EN, numbers_validity_ones, False, UnitDialect.AmE))
 
+units.add_unit(Unit('m3', UnitCategories.M3, Languages.CS, None, True, None))
 units.add_unit(Unit('metr krychlový', UnitCategories.M3, Languages.CS, numbers_validity_ones, False, None))
 units.add_unit(Unit('metru krychlového', UnitCategories.M3, Languages.CS, numbers_validity_decimal, False, None))
 units.add_unit(Unit('metry krychlové', UnitCategories.M3, Languages.CS, numbers_validity_2_3_4, False, None))
 units.add_unit(Unit('metrů krychlových', UnitCategories.M3, Languages.CS, numbers_validity_more_than_5, False, None))
 
+units.add_unit(Unit('m3', UnitCategories.M3, Languages.EN, None, True, None))
 units.add_unit(Unit('cubic meter', UnitCategories.M3, Languages.EN, numbers_validity_ones, False, UnitDialect.AmE))
 units.add_unit(Unit('cubic meters', UnitCategories.M3, Languages.EN, numbers_validity_not_ones, False, UnitDialect.AmE))
 units.add_unit(Unit('cubic metre', UnitCategories.M3, Languages.EN, numbers_validity_ones, False, None))
@@ -649,7 +655,8 @@ units.add_unit(Unit(',-Kč', UnitCategories.CZK, Languages.CS, None, True, None)
 units.add_unit(Unit('korun českých', UnitCategories.CZK, Languages.CS, numbers_validity_more_than_5, False, None))
 units.add_unit(Unit('koruna česká', UnitCategories.CZK, Languages.CS, numbers_validity_ones, False, None))
 units.add_unit(Unit('koruny české', UnitCategories.CZK, Languages.CS, numbers_validity_2_3_4, False, None))
-units.add_unit(Unit('korun', UnitCategories.CZK, Languages.CS, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('koruny', UnitCategories.CZK, Languages.CS, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('korun', UnitCategories.CZK, Languages.CS, numbers_validity_more_than_5, False, None))
 
 units.add_unit(Unit('CZK', UnitCategories.CZK, Languages.EN, None, True, None, True))
 units.add_unit(Unit('crowns', UnitCategories.CZK, Languages.EN, numbers_validity_not_ones, False, None))

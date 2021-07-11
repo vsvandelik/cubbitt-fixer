@@ -24,3 +24,5 @@ class StatisticsMarks(Enum):
     SINGLE_NAME_SENTENCE = auto()
     NUMBERS_MODIFIERS = auto()
     DECIMAL_POINT_AS_TIME = auto()
+    ONLY_NUMBER_SAME = auto()
+    ONLY_NUMBER_DIFFERENT = auto()
