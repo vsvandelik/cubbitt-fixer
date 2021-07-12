@@ -1,18 +1,24 @@
-import re
-from typing import Union, List, Tuple, Dict
+from typing import List, Tuple, Dict, Set
 
 from fixer._words_to_numbers_converter import WordsNumbersConverter
 
 from ._finder import Finder, NumberUnitFinderResult
 from ._replacer import Replacer
 from ._sentence_pair import SentencePair
-from ._splitter import StringToNumberUnitConverter as Splitter
 from ._statistics import StatisticsMarks
 from ._units import units
 from .fixer_configurator import FixerConfigurator, FixerModes
 
 
 class Relationship:
+    """Internal class for holding relationship between source and translated sentence parts
+
+    For each number and unit part from translated sentence there is
+    one Relationship instance holding temporary relations between
+    translated part and all source parts. After the relationship
+    of one pair is confirmed, source part is remove from all Relationship
+    instances.
+    """
 
     def __init__(self):
         self.only_numbers_same = set()
@@ -23,6 +29,7 @@ class Relationship:
         self.different_number_different_unit = set()
 
     def remove_src_sentence(self, idx: int):
+        """Remove given idx from all internal sets"""
         self.only_numbers_same.discard(idx)
         self.only_numbers_different.discard(idx)
         self.same_number_same_unit.discard(idx)
@@ -30,7 +37,8 @@ class Relationship:
         self.different_number_same_unit.discard(idx)
         self.different_number_different_unit.discard(idx)
 
-    def get_list_by_level(self, level: int):
+    def get_list_by_level(self, level: int) -> Set[int]:
+        """Returns one level of relationships"""
         levels = {
             0: self.only_numbers_same,
             1: self.only_numbers_different,
@@ -48,36 +56,35 @@ class NumberFixer:
     Checks whenever sentence contains any number-unit mistakes and tries to fix them. Based
     on count of number-unit pairs concrete fix methods are selected.
 
-    For sentences where are more than one number-units pairs, the external tool (word-aligners)
-    are used.
+    It can work with number followed with units and also individual numbers.
     """
 
     def __init__(self, configuration: FixerConfigurator):
+        """
+        :param configuration: Configuration of the tool
+        """
         self.configuration = configuration
 
         self.source_lang = configuration.source_lang
         self.target_lang = configuration.target_lang
 
-    def fix(self, sentence_pair: SentencePair) -> Tuple[Union[str, bool], List]:
+    def fix(self, sentence_pair: SentencePair) -> Tuple[str, List[StatisticsMarks]]:
         """Fix numbers problems in given sentence based on original text and translated text.
 
-        There are two fixing methods. One for single number problem and the second for the rest. That is because
-        there are used different heuristics for each case.
+        Firstly all numbers are found, then they are matched to each other and finally they
+        are fixed (changed) if necessary.
 
-        :return: tuple with fixer output:
-
-            - result of the fixer
-                - corrected sentence if it was possible
-                - `false` if there is a problem which cannot be fixed
-                - `true` is there was found no problem
-            - list with flags labeling the sentence and the correction
+        :param sentence_pair: Information about source and translated sentence
+        :return: Possible repaired sentence and statistics
         """
 
         marks = []
 
+        # Find numbers written as a digits
         src_lang_numbers_units = Finder.find_number_unit_pairs(sentence_pair.source_text, self.source_lang)
         trg_lang_numbers_units = Finder.find_number_unit_pairs(sentence_pair.target_text, self.target_lang)
 
+        # Find numbers written as a words (only when there are any words indicating numbers)
         if WordsNumbersConverter.contains_text_numbers(sentence_pair.source_text, self.source_lang) or len(src_lang_numbers_units) != len(trg_lang_numbers_units):
             number_as_word_src = Finder.find_word_number_unit(sentence_pair.source_text, self.source_lang, sentence_pair.source_lemmas)
             if number_as_word_src:
@@ -91,10 +98,10 @@ class NumberFixer:
                 trg_lang_numbers_units += number_as_word_trg
 
         if len(src_lang_numbers_units) == 0 and len(trg_lang_numbers_units) == 0:
-            return True, []
+            return sentence_pair.target_text, []
 
         elif len(src_lang_numbers_units) != len(trg_lang_numbers_units):
-            marks += [StatisticsMarks.UNFIXABLE_PART]
+            marks += [StatisticsMarks.DIFFERENT_COUNT_NUMBERS_UNITS]
 
         elif len(src_lang_numbers_units) == 1 and len(trg_lang_numbers_units) == 1:
             marks.append(StatisticsMarks.SINGLE_NUMBER_UNIT_SENTENCE)
@@ -115,20 +122,20 @@ class NumberFixer:
 
         result_sentence = sentence_pair.target_text
 
+        # process each level of relationships (top-bottom order)
         for idx, val in levels.items():
             binding = self.__process_src_trg_pairs_relationships(relationships, idx)
             result_sentence, m = val(binding, src_lang_numbers_units, trg_lang_numbers_units, result_sentence)
             marks += m
 
-        if result_sentence == sentence_pair.target_text:
-            return True, marks
-        else:
-            return result_sentence, marks
+        return result_sentence, marks
 
     def __process_only_numbers_same(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str):
+        """Process matches of same numbers"""
         return sentence, len(bindings) * [StatisticsMarks.ONLY_NUMBER_SAME]
 
     def __process_only_numbers_different(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        """Process matches of different numbers without units. Numbers are replaced."""
         if not len(bindings):
             return sentence, []
 
@@ -141,6 +148,7 @@ class NumberFixer:
         return sentence, len(bindings) * [StatisticsMarks.ONLY_NUMBER_DIFFERENT]
 
     def __process_sentence_same_number_same_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        """Process matches of numbers with units (both same). When mode is recalculating, conversion is provided."""
         if self.configuration.mode == FixerModes.FIXING or not len(bindings):
             return sentence, [StatisticsMarks.CORRECT_NUMBER_UNIT] if len(bindings) else []
 
@@ -161,6 +169,7 @@ class NumberFixer:
         return sentence, marks
 
     def __process_sentence_same_number_different_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        """Process matches of numbers with different units. Unit is replaced. When mode is recalculating, conversion is provided."""
         if not len(bindings):
             return sentence, []
 
@@ -184,6 +193,10 @@ class NumberFixer:
         return sentence, marks
 
     def __process_sentence_different_number_same_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        """Process matches of different numbers with same units. Number is replaced. When mode is recalculating, conversion is provided.
+
+        It checks whenever the only difference between numbers is not a separators.
+        """
         change = False
         marks = []
 
@@ -197,7 +210,7 @@ class NumberFixer:
             if self.configuration.mode == FixerModes.RECALCULATING:
                 converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
                 if converted_unit and converted_unit:
-                    sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair,  converted_number, converted_unit, self.target_lang)
+                    sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, converted_number, converted_unit, self.target_lang)
                     change = True
             else:
 
@@ -220,6 +233,7 @@ class NumberFixer:
         return sentence, ([StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] + marks if len(bindings) and change else [])
 
     def __process_sentence_different_number_different_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        """Process matches of numbers with units (both different). Both is replaced. When mode is recalculating, conversion is provided."""
         marks = []
 
         for binding_trg, binding_src in bindings:
@@ -239,11 +253,19 @@ class NumberFixer:
                     continue
 
                 suitable_unit = units.get_correct_unit(self.target_lang, src_pair.number, src_pair.unit)
-                sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair,  src_pair.number, suitable_unit, self.target_lang)
+                sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, src_pair.number, suitable_unit, self.target_lang)
 
         return sentence, ([StatisticsMarks.WRONG_NUMBER_UNIT] + marks if len(bindings) else [])
 
-    def __consider_tolerance_rates(self, src_pair, trg_pair):
+    def __consider_tolerance_rates(self, src_pair, trg_pair) -> bool:
+        """It checks if the number from translated sentence is similar to number from source sentence
+
+        Based on tolerance rate from configuration it is checks whenever the number is
+        in the tolerance.
+
+        Approximately numbers are considered.
+        :return: True if the number is in tolerance
+        """
         base_src_number = units.convert_to_base_in_category(src_pair.unit, src_pair.number)
         converted_trg_number = units.convert_to_base_in_another_system(trg_pair.unit, trg_pair.number, src_pair.unit.category)
 
@@ -262,6 +284,17 @@ class NumberFixer:
 
     @staticmethod
     def __process_src_trg_pairs_relationships(relationships: Dict[int, Relationship], level: int) -> List[Tuple[int, int]]:
+        """Based on relationships is creates the matches
+
+        It process all Relationships instances and for each level it verifies
+        whenever there is only one possible match. If so, the match instance is created.
+
+        If not, the possible matches are created based on order (except for the last level).
+
+        :param relationships: List of possible matches - for each target part there is a instance
+        :param level: level to be processed now
+        :return:
+        """
         results = []
 
         while len(relationships):
@@ -297,6 +330,14 @@ class NumberFixer:
 
     @staticmethod
     def __prepare_src_trg_pairs_relationships(src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult]) -> Dict[int, Relationship]:
+        """It creates relations between parts from source and translated sentences.
+
+        For each translated sentence part there is created one instance of Relationships and
+        all source sentence part are divided into categories for all instances.
+
+        :return: Dictionary with indexes as keys and Relationship instances as values
+        """
+
         relationships = {}
 
         for trg_idx, trg_pair in enumerate(trg_lang_numbers_units):

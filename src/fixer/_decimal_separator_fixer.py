@@ -1,5 +1,5 @@
 import re
-from typing import Union, List, Tuple
+from typing import List, Tuple
 
 from ._languages import Language
 from ._sentence_pair import SentencePair
@@ -17,6 +17,9 @@ class DecimalSeparatorFixer:
     """
 
     def __init__(self, configuration: FixerConfigurator):
+        """
+        :param configuration: Configuration of the package
+        """
         self.configuration = configuration
 
         self.source_lang = configuration.source_lang
@@ -25,12 +28,14 @@ class DecimalSeparatorFixer:
         self.source_pattern = DecimalSeparatorFixer.__prepare_re_pattern_all_numbers(self.source_lang)
         self.target_pattern = DecimalSeparatorFixer.__prepare_re_pattern_all_numbers(self.target_lang)
 
-    def fix(self, sentence_pair: SentencePair) -> Tuple[Union[str, bool], List]:
+    def fix(self, sentence_pair: SentencePair) -> Tuple[str, List[StatisticsMarks]]:
         """It verifies whenever the sentence contains problem and tries to fix it
 
         Based on regular expression it searches for numbers with separator in source language
         and verifies whenever same numbers with correct separators are in the translation.
 
+        :param sentence_pair: Internal class with details about the sentence and translation
+        :return: Possible repaired sentence and statistics
         """
 
         source_parts = re.finditer(self.source_pattern, sentence_pair.source_text)
@@ -55,10 +60,7 @@ class DecimalSeparatorFixer:
                     marks += [StatisticsMarks.DECIMAL_SEPARATOR_PROBLEM]
                 replaced += 1
 
-        if replaced == 0:
-            return True, []
-        else:
-            return translated_sentence, marks
+        return translated_sentence, marks
 
     @staticmethod
     def __prepare_re_patter_one_number(number: str, language: Language) -> str:

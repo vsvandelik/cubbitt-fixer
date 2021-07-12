@@ -1,5 +1,5 @@
 import logging
-from typing import Union, List, Tuple
+from typing import List, Tuple
 
 from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._names_fixer import NamesFixer
@@ -12,16 +12,18 @@ from .fixer_configurator import FixerConfigurator, FixerTools
 class Fixer:
     """Class fixing text with specific fixers based on given parameters.
 
-    For constructing the fixer some arguments are needed.
+    Supported operations are:
+      - checking and replacement of separators (decimal, thousands)
+      - checking and replacement of proper names of person
+      - checkong and replacement of numbers (possible with units)
 
-    List of supported arguments:
-      - `source_lang` - text acronym of language of source sentence
-      - `target_lang` - text acronym of language of target sentence
-      - `approximately` - flag whenever it  should consider approximation phrases
-      - `recalculate` - flag whenever it should change correct units into different ones
+    All exceptions are catched and logged into 'fixer.log' file.
     """
 
     def __init__(self, configuration: FixerConfigurator):
+        """
+        :param configuration: Configuration instance
+        """
         self.fixers = []
         self.configuration = configuration
 
@@ -36,7 +38,7 @@ class Fixer:
 
         logging.basicConfig(filename='fixer.log', level=logging.ERROR)
 
-    def fix(self, original_text: str, translated_text: str) -> Tuple[Union[str, bool], List]:
+    def fix(self, original_text: str, translated_text: str) -> Tuple[str, bool, List[StatisticsMarks]]:
         """Function to fix translation of one sentence based on Fixer attributes.
 
         It caches all exceptions with fixer and when some exception is cached,
@@ -45,11 +47,8 @@ class Fixer:
         :param original_text: Text in source language for verifying the translation.
         :param translated_text: Text translated by translator.
         :return: tuple with fixer output:
-
-            - result of the fixer
-                - corrected sentence if it was possible
-                - `false` if there is a problem which cannot be fixed
-                - `true` is there was found no problem
+            - sentence after fixing (possible the same as input)
+            - has changed flag
             - list with flags labeling the sentence and the correction
         """
 
@@ -60,18 +59,11 @@ class Fixer:
 
         for tool in self.fixers:
             try:
-                output, marks = tool.fix(sentence_pair)
+                sentence_pair.target_text, marks = tool.fix(sentence_pair)
                 final_marks += marks
-                if isinstance(output, str):
-                    sentence_pair.target_text = output
-                elif not output:
-                    status = False
             except Exception as error:
                 logging.error("Error when fixing sentence:\n%s\t%s\nException: %s", original_text, translated_text, error)
-                raise error
-                return False, [StatisticsMarks.EXCEPTION_CATCH]
+                # raise error
+                return sentence_pair.target_text, sentence_pair.target_text_has_changed, [StatisticsMarks.EXCEPTION_CATCH]
 
-        if sentence_pair.target_text_has_changed:
-            return sentence_pair.target_text, final_marks
-        else:
-            return True if status else False, final_marks
+        return sentence_pair.target_text, sentence_pair.target_text_has_changed, final_marks
