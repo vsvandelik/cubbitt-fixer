@@ -60,7 +60,7 @@ def prepare_find_numbers_pattern_one_language(language: Language) -> re.Pattern:
     scales = language.big_numbers_scale_keys
     units_all = units.get_regex_units_for_language(language)
 
-    return re.compile(rf"(?:(?P<inches>\d+\'\d+\")|(?P<unit>{units_before})\s?(?P<number>\d+(?:[ {sep_thousands}]\d{{3}})*(?:{sep_decimals}\d+)?)[\s-]?(?:(?P<scaling>{scales}|m)\b)?|(?P<a_number>\d+(?:[ {sep_thousands}]\d{{3}})*({sep_decimals}\d+)?)[\s-]?(?:(?P<a_scaling>{scales}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{units_all})?(?:\b|\s|$|[,.\s]))", re.IGNORECASE)
+    return re.compile(rf"(?:(?P<inches>(\d+\'\d+\")|(\d+-(?:foot|feet)-\d+))|(?P<unit>{units_before})\s?(?P<number>\d+(?:[ {sep_thousands}]\d{{3}})*(?:{sep_decimals}\d+)?)[\s-]?(?:(?P<scaling>{scales}|m)\b)?|(?P<a_number>\d+(?:[ {sep_thousands}]\d{{3}})*({sep_decimals}\d+)?)[\s-]?(?:(?P<a_scaling>{scales}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{units_all})?(?:\b|\s|$|[,.\s]))", re.IGNORECASE)
 
 
 class Finder:
@@ -70,7 +70,7 @@ class Finder:
     searching for the numbers written as text.
     """
 
-    __FIND_NUMBERS_PATTERN = prepare_find_numbers_pattern() #: :meta hide-value:
+    __FIND_NUMBERS_PATTERN = prepare_find_numbers_pattern()  #: :meta hide-value:
 
     @staticmethod
     def find_number_unit_pairs(sentence: str, language: Language) -> List[NumberUnitFinderResult]:
@@ -227,18 +227,14 @@ class Finder:
 
     @staticmethod
     def __convert_text_to_inches(text: str) -> int:
-        """Convert number written as feet and inches (6'12") to inches"""
-        feet = 0
-        feet_idx_end = None
-        inches = 0
-        for idx, l in enumerate(text):
-            if l == "'":
-                feet = int(text[:idx])
-                feet_idx_end = idx
-            elif l == '"':
-                inches = int(text[feet_idx_end + 1:idx])
+        """Convert number written as feet and inches (6'12" or 6-feet-12) to inches"""
 
-        return inches + 12 * feet
+        if "feet" in text or "foot" in text:
+            feet, _, inches = text.split("-")
+        else:
+            feet, inches = text.strip("\"").split("'")
+
+        return int(inches) + 12 * int(feet)
 
     @staticmethod
     def __find_approximately_phrase(language: Language, match: str, sentence: str) -> bool:

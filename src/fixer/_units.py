@@ -411,6 +411,9 @@ class UnitsWrapper:
             number = number * unit.category.base_coefficient
             actual_category = unit.category.base
 
+        if needed_category.base:
+            needed_category = needed_category.base
+
         converted_number, converted_category = actual_category.conversion(number, actual_category, [needed_category.system])
 
         if converted_category != needed_category:

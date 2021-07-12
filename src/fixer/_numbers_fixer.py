@@ -263,6 +263,7 @@ class NumberFixer:
         in the tolerance.
 
         Approximately numbers are considered.
+
         :return: True if the number is in tolerance
         """
         base_src_number = units.convert_to_base_in_category(src_pair.unit, src_pair.number)
