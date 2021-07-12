@@ -8,10 +8,20 @@ from ._languages import Languages, Language
 
 
 class WordsNumbersConverterException(Exception):
+    """Exception thrown when the text representation of the number cannot be converted."""
     pass
 
 
 class WordsNumbersConverter:
+    """Class for converting text representation of numbers into their digits representation
+
+    For czech language it uses custom converting algorithms, which should be enable
+    to convert numbers even in form of "petadvacet".
+
+    For english it uses external package distributed via PyPI.
+    """
+
+    #: Text numbers table for czech language
     __CS = {
         'nula': 0,
         'jedna': 1,
@@ -45,6 +55,7 @@ class WordsNumbersConverter:
         'devadesát': 90,
     }
 
+    #: Text numbers table for english language
     __EN = {
         'zero': 0,
         'null': 0,
@@ -76,49 +87,80 @@ class WordsNumbersConverter:
         'ninety': 90
     }
 
+    #: Regular expression pattern to search any number in string (czech)
     __CS_words_regex = re.compile(r"\b(" + "|".join(__CS.keys()) + r")\b", re.IGNORECASE)
+
+    #: Regular expression pattern to search any number in string (english)
     __EN_words_regex = re.compile(r"\b(" + "|".join(__EN.keys()) + r")\b", re.IGNORECASE)
 
     @staticmethod
-    def contains_text_numbers(sentence: str, language: Language):
-        if language.acronym == Languages.CS.acronym and WordsNumbersConverter.__CS_words_regex.search(sentence):
+    def contains_text_numbers(sentence: str, language: Language) -> bool:
+        """Verifies whenever the sentence contains any text-represented number
+
+        It searches via regex for any word which should be indicating
+        there is some number. It does not check any validity of the number.
+
+        :param sentence: Sentence to search number in
+        :param language: Language of the sentence
+        :return: Bool whenever it contains any number
+        """
+        if language == Languages.CS and WordsNumbersConverter.__CS_words_regex.search(sentence):
             return True
-        elif language.acronym == Languages.EN.acronym and WordsNumbersConverter.__EN_words_regex.search(sentence):
+        elif language == Languages.EN and WordsNumbersConverter.__EN_words_regex.search(sentence):
             return True
 
         return False
 
     @staticmethod
     def convert(phrase: List[str], language: Language) -> Optional[Number]:
-        if language.acronym == Languages.CS.acronym:
+        """Convert text-represented numbers into digits
+
+        Based on list of words on input it construct one number
+        which should be digits representation of those words.
+
+        For czech it uses custom algorithm, for english external package is called.
+
+        Supports only integers.
+
+        :param phrase: List of words with numbers as text
+        :param language: Language of the phrase words
+        :return: Number if conversion was successful, None otherwise
+        """
+        if language == Languages.CS:
             return WordsNumbersConverter.__cz_converter(phrase)
-        elif language.acronym == Languages.EN.acronym:
+        elif language == Languages.EN:
             return WordsNumbersConverter.__en_converter(phrase)
 
         return None
 
     @staticmethod
     def __cz_converter(phrase: List[str]) -> Number:
+        """Converts czech words into single number"""
         sum = 0
 
         scaling = [Languages.CS.big_numbers_scale[word][0] for word in phrase if word in Languages.CS.big_numbers_scale.keys()]
 
-        last_scaled_number = 0
         last_number = 0
         previous_was_scaling = False
         for word in phrase:
-            if WordsNumbersConverter.__czech_shortcuts(word):
+
+            if WordsNumbersConverter.__czech_shortcuts(word):  # format "pětadvacet"
                 last_number += WordsNumbersConverter.__czech_shortcuts(word)
                 previous_was_scaling = False
+
             elif word in WordsNumbersConverter.__CS.keys():
                 last_number += WordsNumbersConverter.__CS[word]
                 previous_was_scaling = False
+
             elif word in Languages.CS.big_numbers_scale.keys():
                 actual_scaling = scaling.pop(0)
+
                 if previous_was_scaling and last_number > 0:
                     last_number *= Languages.CS.big_numbers_scale[word][0]
+
                 elif last_number == 0:
                     last_number = Languages.CS.big_numbers_scale[word][0]
+
                 else:
                     last_number = last_number * Languages.CS.big_numbers_scale[word][0]
 
@@ -137,7 +179,8 @@ class WordsNumbersConverter:
         return sum
 
     @staticmethod
-    def __czech_shortcuts(phrase: str):
+    def __czech_shortcuts(phrase: str) -> Number:
+        """Converts number as 'pětadvacet' into digits"""
         parts = re.search(r"(jedn|dva|tři|čtyři|pět|šest|sedm|osm|devět)a(dvacet|třicet|čtyřicet|padesát|šedesát|sedmdesát|osmdesát|devadesát)", phrase, re.IGNORECASE)
         if not parts:
             return False
@@ -146,10 +189,7 @@ class WordsNumbersConverter:
 
     @staticmethod
     def __en_converter(phrase: List[str]) -> Number:
+        """Convers english phrase using w2n package"""
         if len(phrase) == 1 and phrase[0] in Languages.EN.big_numbers_scale:
             return Languages.EN.big_numbers_scale[phrase[0]][0]
         return w2n.word_to_num(" ".join(phrase))
-
-
-if __name__ == "__main__":
-    print(WordsNumbersConverter.convert(["two", "million", "three", "thousand", "nine", "hundred", "and", "eighty", "four"], Languages.EN))

@@ -1,5 +1,5 @@
-from typing import List, Dict
 import re
+from typing import List, Dict
 
 
 class WrongLanguage(ValueError):
@@ -12,11 +12,6 @@ class Language:
 
     It holds basic information about language as acronym,
     separators, etc. (more detailed in the list of parameters).
-
-    :param acronym: string acronym of language
-    :param approximately_phrases: words used in given language for approximately figures
-    :param decimal_separator: char used to separate decimal part of non-integer number
-    :param thousands_separator: char used to separate thousands in long numbers
     """
 
     def __init__(self,
@@ -25,6 +20,13 @@ class Language:
                  decimal_separator: str,
                  thousands_separator: str,
                  big_numbers_scale: Dict[str, int]):
+        """
+        :param acronym: string acronym of language
+        :param approximately_phrases: words used in given language for approximately figures
+        :param decimal_separator: char used to separate decimal part of non-integer number
+        :param thousands_separator: char used to separate thousands in long numbers
+        :param big_numbers_scale: list of words meaning scaling the number (the value is tuple scaling value and validity)
+        """
         self.acronym = acronym
         self.approximately_phrases = approximately_phrases
         self.decimal_separator = decimal_separator
@@ -37,6 +39,7 @@ class Language:
 class Languages:
     """Wrapper of languages supported by the package."""
 
+    #: List of validity rules of scaling numbers.
     __SCALING_WORDS_VALIDITY = {
         'ones': [-1, 1],
         '2_3_4': [-4, -3, -2, 2, 3, 4],
@@ -121,6 +124,7 @@ class Languages:
         """It returns instance of language class based on acronym.
 
         :param acronym: str acronym of the language
+        :return: instance of language
         :raises WrongLanguage: exception thrown when given acronym is not valid
         """
         if acronym == Languages.CS.acronym:

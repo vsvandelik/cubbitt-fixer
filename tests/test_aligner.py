@@ -31,6 +31,17 @@ def test_get_order_alignment():
     assert alignment == expected_result
 
 
+def test_get_order_alignment_names():
+    src_text = "Koupil Petrovi, Ivanovi a Davidovi dům."
+    trg_text = "He bought Peter, Ivan and David a house."
+
+    alignment = OrderAligner.get_alignment(src_text, trg_text, Languages.EN, Languages.CS)
+
+    expected_result = [('Petrovi', 'Peter'), ('Ivanovi', 'Ivan'), ('Davidovi', 'David')]
+
+    assert alignment == expected_result
+
+
 def test_get_order_alignment_empty_sentences():
     alignment = OrderAligner.get_alignment("", "", Languages.EN, Languages.CS)
 

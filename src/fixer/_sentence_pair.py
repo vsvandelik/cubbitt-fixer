@@ -1,67 +1,88 @@
+from typing import List, Tuple
+
 from .fixer_configurator import FixerConfigurator
 
 
 class SentencePair:
+    """Main data class holding information about source and translated sentence.
+
+    Mainly the output of externals tools are saved into this class so they do not
+    need to be called again.
+    """
 
     def __init__(self, source_text: str, target_text: str, configuration: FixerConfigurator):
-        self._source_text = source_text
-        self._target_text = self._original_target_text = target_text
-        self._configuration = configuration
+        """
+        :param source_text: Original text from the user
+        :param target_text: Translated text from the translator
+        :param configuration: Configuration of the tool
+        """
+        self.__source_text = source_text
+        self.__target_text = self.__original_target_text = target_text
+        self.__configuration = configuration
 
-        self._alignment = None
-        self._source_names = None
-        self._target_names = None
-        self._source_lemmas = None
-        self._target_lemmas = None
-
-    @property
-    def source_text(self):
-        return self._source_text
-
-    @property
-    def target_text_has_changed(self):
-        return True if self.target_text != self._original_target_text else False
+        self.__alignment = None
+        self.__source_names = None
+        self.__target_names = None
+        self.__source_lemmas = None
+        self.__target_lemmas = None
 
     @property
-    def target_text(self):
-        return self._target_text
+    def source_text(self) -> str:
+        """Original text from the user"""
+        return self.__source_text
+
+    @property
+    def target_text_has_changed(self) -> bool:
+        """Indicator whenever the translated text changed"""
+        return True if self.__target_text != self.__original_target_text else False
+
+    @property
+    def target_text(self) -> str:
+        """Translated text from the translator"""
+        return self.__target_text
 
     @target_text.setter
-    def target_text(self, value):
-        self._target_text = value
+    def target_text(self, value: str):
+        """Change the target text"""
+        self.__target_text = value
 
     @property
-    def alignment(self):
-        if not self._alignment:
-            self._alignment = self._configuration.aligner.get_alignment(
-                self._source_text, self._target_text, self._configuration.source_lang, self._configuration.target_lang)
+    def alignment(self) -> List[Tuple[str, str]]:
+        """Word alignment of original to translated sentence"""
+        if not self.__alignment:
+            self.__alignment = self.__configuration.aligner.get_alignment(
+                self.__source_text, self.__target_text, self.__configuration.source_lang, self.__configuration.target_lang)
 
-        return self._alignment
-
-    @property
-    def source_names(self):
-        if not self._source_names:
-            self._source_names = self._configuration.names_tagger.get_names(self._source_text, self._configuration.source_lang)
-
-        return self._source_names
+        return self.__alignment
 
     @property
-    def target_names(self):
-        if not self._target_names:
-            self._target_names = self._configuration.names_tagger.get_names(self._target_text, self._configuration.target_lang)
+    def source_names(self) -> List[List[str]]:
+        """List of names in original sentence"""
+        if not self.__source_names:
+            self.__source_names = self.__configuration.names_tagger.get_names(self.__source_text, self.__configuration.source_lang)
 
-        return self._target_names
-
-    @property
-    def source_lemmas(self):
-        if not self._source_lemmas:
-            self._source_lemmas = self._configuration.lemmatizator.get_lemmatization(self._source_text, self._configuration.source_lang, False)
-
-        return self._source_lemmas
+        return self.__source_names
 
     @property
-    def target_lemmas(self):
-        if not self._target_lemmas:
-            self._target_lemmas = self._configuration.lemmatizator.get_lemmatization(self._target_text, self._configuration.target_lang, False)
+    def target_names(self) -> List[List[str]]:
+        """List of names in translated sentence"""
+        if not self.__target_names:
+            self.__target_names = self.__configuration.names_tagger.get_names(self.__target_text, self.__configuration.target_lang)
 
-        return self._target_lemmas
+        return self.__target_names
+
+    @property
+    def source_lemmas(self) -> List[dict]:
+        """Original sentence analysis"""
+        if not self.__source_lemmas:
+            self.__source_lemmas = self.__configuration.lemmatizator.get_lemmatization(self.__source_text, self.__configuration.source_lang)
+
+        return self.__source_lemmas
+
+    @property
+    def target_lemmas(self) -> List[dict]:
+        """Translated sentence analysis"""
+        if not self.__target_lemmas:
+            self.__target_lemmas = self.__configuration.lemmatizator.get_lemmatization(self.__target_text, self.__configuration.target_lang)
+
+        return self.__target_lemmas

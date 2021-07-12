@@ -18,20 +18,18 @@ class AlignerInterface(ABC):
     """Interface for word-aligners in the package.
 
     Implementations of this interface should provide a word-alignment
-    for given sentence in en-cs.
-
-    Minimum requirement is returning word-alignment for numbers and units.
+    for given sentences.
     """
 
     @staticmethod
     @abstractmethod
     def get_alignment(src_text: str, trg_text: str, src_lang: Language, trg_lang: Language) -> List[Tuple[str, str]]:
-        """Main alignment method returning the word-alignment."""
+        """Returns word alignment of the sentences based on given languages. Result as list of aligned words."""
         pass
 
 
 class FastAlignAligner(AlignerInterface):
-    """Support class for communicating with the external aligner server.
+    """Wrapper for communicating with external online aligner.
 
     It uses predefined alignment server running at UFAL, MFF. The server uses
     fast_align tool for word-alignment with CzEng2 as dataset.
@@ -41,15 +39,19 @@ class FastAlignAligner(AlignerInterface):
 
     @staticmethod
     def get_alignment(src_text: str, trg_text: str, src_lang: Language, trg_lang: Language) -> List[Tuple[str, str]]:
-        """Static method for getting a word-alignment of pair of english and czech sentences.
+        """Returns word alignment given by fast_align.
 
         Based on given sentences it communicate with external word-aligner tool, which
         returns the pairs of matching indexes and tokenized input sentences.
 
+        :param src_text: Source sentence (cs or en)
+        :param trg_text: Translated sentence (cs or en)
+        :param src_lang: Language of the source sentence
+        :param trg_lang: Language of the translated sentence
         :raises AlignerException: Exception raises when it was not possible to connect to the server
         :return: List of tuples of matching words, first word is in english, second in czech
         """
-        if src_lang == Languages.CS:
+        if src_lang == Languages.CS:  # source text should be in czech
             temp = src_text
             src_text = trg_text
             trg_text = temp
@@ -75,53 +77,33 @@ class FastAlignAligner(AlignerInterface):
 
 
 class OrderAligner(AlignerInterface):
-    """Backup offline word-aligner based on order of words in sentence.
+    """Simple offline word-aligner based on order of words in sentence.
 
-    This aligner should be used when it is not possible to connect to the
-    external aligner.
+    This aligner should not be used because of its naivety.
 
     This aligner returns pairs of word tokens contains units and numbers
-    based on given order in sentence.
+    based on given order in sentence. Also it returns proper names identified
+    by the first capital letter. It does not recognise whenever the name
+    is name of the person of something another.
 
     Units are mapped to units, numbers as mapped to numbers.
     """
 
     @staticmethod
-    def _tokenize_sentence(sentence: str):
-        clean_sentence = re.sub(r'[\.,!\?](\s|$)', ' ', sentence).strip()
-        return clean_sentence.split()
-
-    @staticmethod
-    def _get_list_numbers_units(sentence: str, language: Language) -> Tuple[List[str], List[str], List[str]]:
-        """Returns three list (list of all units and numbers based on order, list of numbers, list of units)"""
-        tokens = OrderAligner._tokenize_sentence(sentence)
-
-        selected_tokens = []
-        numbers_tokens = []
-        units_tokens = []
-        units_words = units.get_units_words_list(language)
-
-        for token in tokens:
-            if token.lower() in units_words:  # unit
-                selected_tokens.append(token)
-                units_tokens.append(token)
-            elif token[0].isdigit():  # number
-                selected_tokens.append(token)
-                numbers_tokens.append(token)
-
-        return selected_tokens, numbers_tokens, units_tokens
-
-    @staticmethod
     def get_alignment(src_text: str, trg_text: str, src_lang: Language, trg_lang: Language) -> List[Tuple[str, str]]:
-        """Returns only units and numbers word alignment based on order in sentence.
+        """Returns aligned number, units a names (capitalized tokens)
 
-        It extracts list of numbers and units from both sentences and mapped
-        those lists between languages.
+        Based on order at sentence it returns matching tokens (by categories above).
 
-        :return: List of tuples of matching words (only units and numbers), first word is in english, second in czech
+        :param src_text: Source sentence (cs or en)
+        :param trg_text: Translated sentence (cs or en)
+        :param src_lang: Language of the source sentence
+        :param trg_lang: Language of the translated sentence
+        :raises AlignerException: Exception raises when it was not possible to connect to the server
+        :return: List of tuples of matching words, first word is in english, second in czech
         """
-        tokens_src, _, _ = OrderAligner._get_list_numbers_units(src_text, src_lang)
-        _, numbers_tokens, units_tokens = OrderAligner._get_list_numbers_units(trg_text, trg_lang)
+        tokens_src, _, _, _ = OrderAligner.__get_list_numbers_units_names(src_text, src_lang)
+        _, numbers_tokens, units_tokens, names_tokens = OrderAligner.__get_list_numbers_units_names(trg_text, trg_lang)
 
         output_tokens = []
 
@@ -130,6 +112,11 @@ class OrderAligner(AlignerInterface):
                 output_tokens.append((src_token, numbers_tokens[0]))
                 numbers_tokens.pop(0)
             elif src_token[0].isdigit():  # number
+                output_tokens.append((src_token, None))
+            elif src_token[0].isupper() and src_token[1:].islower() and len(names_tokens):  # name
+                output_tokens.append((src_token, names_tokens[0]))
+                names_tokens.pop(0)
+            elif src_token[0].isupper() and src_token[1:].islower():  # name
                 output_tokens.append((src_token, None))
             elif len(units_tokens):  # unit
                 output_tokens.append((src_token, units_tokens[0]))
@@ -143,6 +130,51 @@ class OrderAligner(AlignerInterface):
             output_tokens.append((None, unit_token))
 
         return output_tokens
+
+    @staticmethod
+    def __get_list_numbers_units_names(sentence: str, language: Language) -> Tuple[List[str], List[str], List[str], List[str]]:
+        """Returns some tokens from the sentence divided into categories
+
+        It process the sentence and extract all interesting parts of it -
+        numbers, units and names.
+
+        Each of these categories are returned as separate list.
+
+        :param sentence: Sentence to be process
+        :param language: Language of the sentence
+        :return: four lists
+          - list of all tokens returned in rest ot the lists based on order in the sentence
+          - list of all numbers (based on starting with digit)
+          - list of all units (based on existence in unit list)
+          - list of all names (based on first capital letter)
+        """
+        tokens = OrderAligner.__tokenize_sentence(sentence)
+
+        selected_tokens = []
+        numbers_tokens = []
+        units_tokens = []
+        names_tokens = []
+
+        units_words = units.get_units_words_list(language)
+
+        for token in tokens:
+            if token.lower() in units_words:  # unit
+                selected_tokens.append(token)
+                units_tokens.append(token)
+            elif token[0].isdigit():  # number
+                selected_tokens.append(token)
+                numbers_tokens.append(token)
+            elif token[0].isupper() and token[1:].islower() and token != tokens[0]:  # name
+                selected_tokens.append(token)
+                names_tokens.append(token)
+
+        return selected_tokens, numbers_tokens, units_tokens, names_tokens
+
+    @staticmethod
+    def __tokenize_sentence(sentence: str):
+        """Returns sentence divided into separate words (tokens)"""
+        clean_sentence = re.sub(r'[\.,!\?](\s|$)', ' ', sentence).strip()
+        return clean_sentence.split()
 
 
 def get_aligners_list():

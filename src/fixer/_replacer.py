@@ -1,3 +1,5 @@
+from typing import Tuple, Optional
+
 from ._custom_types import *
 from ._finder import NumberUnitFinderResult
 from ._languages import Language, Languages
@@ -11,7 +13,7 @@ class Replacer:
     """
 
     @staticmethod
-    def replace_unit(sentence: str, number_unit_part: str, number: Number, unit: Unit, new_unit: Unit, language, modifier=False, scaling=False) -> str:
+    def replace_unit(sentence: str, source_number_unit: NumberUnitFinderResult, target_number_unit: NumberUnitFinderResult, new_unit: Unit, language: Language) -> str:
         """Replace only unit within the broken sentence
 
         Based on new unit it decides whenever the unit should be put. When the new unit
@@ -19,56 +21,115 @@ class Replacer:
 
         For units before number with length 1 there is no space between unit and number.
         For units after number there is number is first letter of unit is alphabet char.
+
+        :param sentence: Sentence to be replaced in
+        :param source_number_unit: NumberUnit part from the source sentence
+        :param target_number_unit: NumberUnit part from the target sentence
+        :param new_unit: Unit to be replaced with
+        :param language: Language of the sentence to be replaced in
+        :return: Sentence with replaced wrong unit
         """
 
-        translated_number = number_unit_part.replace(unit.word, "").strip(' ,-')
+        translated_number = target_number_unit.text_part.replace(target_number_unit.unit.word, "").strip(' ,-')
 
-        # if new_unit.before_number and scaling:
-        #    non_abbreviation_unit = units.get_correct_unit(language, number, unit, new_unit, new_unit.category, abbreviation=False)
+        # Backup of replacing only with the acronyms
+        # if new_unit.before_number and source_number_unit.scaling:
+        #    non_abbreviation_unit = units.get_correct_unit(language, target_number_unit.number, target_number_unit.unit, new_unit, new_unit.category, abbreviation=False)
         #    new_number_unit_part = f"{translated_number} {non_abbreviation_unit.word}"
-        if new_unit.before_number and len(new_unit.word) == 1:
+
+        if new_unit.before_number and len(new_unit.word) == 1:  # eg. $250
             new_number_unit_part = f"{new_unit.word}{translated_number}"
-        elif new_unit.before_number:
+
+        elif new_unit.before_number:  # eg. CZK 250
             new_number_unit_part = f"{new_unit.word} {translated_number}"
-        elif modifier and new_unit.language.acronym == Languages.EN.acronym:
-            singular_unit = units.get_correct_unit(Languages.EN, 1, unit, new_unit, new_unit.category, modifier=True)
+
+        elif target_number_unit.modifier and new_unit.language == Languages.EN:  # eg. 250-metre
+            singular_unit = units.get_correct_unit(Languages.EN, 1, target_number_unit, new_unit, modifier=True)
             new_number_unit_part = f"{translated_number}-{singular_unit.word}"
-        elif not new_unit.word[0].isalpha():
+
+        elif not new_unit.word[0].isalpha():  # 250,-kč
             new_number_unit_part = f"{translated_number}{new_unit.word}"
+
         else:
             new_number_unit_part = f"{translated_number} {new_unit.word}"
 
-        return sentence.replace(number_unit_part.strip(), new_number_unit_part).replace("  ", " ")
+        return sentence.replace(target_number_unit.text_part.strip(), new_number_unit_part).replace("  ", " ")
 
     @staticmethod
-    def replace_number(sentence: str, source_number_unit: NumberUnitFinderResult, target_number_unit: NumberUnitFinderResult, language: Language, original_target_number: str, new_number: Number) -> str:
+    def replace_number(sentence: str, source_number_unit: NumberUnitFinderResult, target_number_unit: NumberUnitFinderResult, language: Language, original_target_number: str) -> str:
+        """Replace only number within the broken sentence
 
-        new_number = Replacer.__round_to_valid_digits(source_number_unit.number, new_number)
-        new_number, _ = Replacer.__add_scaling_word(target_number_unit, new_number, language)
+        In the given part of the sentence the number is replaced for another number.
+        The given number is rounded and the scaling is added.
+
+        :param sentence: Sentence to be replaced in
+        :param source_number_unit: NumberUnit part from the source sentence
+        :param target_number_unit: NumberUnit part from the target sentence
+        :param language: Language of the sentence to be replaced in
+        :param original_target_number: Striped number as it was in original translated sentence
+        :return: Sentence with replaced wrong number
+        """
+
+        new_number = Replacer.__round_to_valid_digits(source_number_unit.number, source_number_unit.number)
+        new_number, _ = Replacer.__add_scaling_word(source_number_unit, target_number_unit, new_number, language)
 
         with_new_number = target_number_unit.text_part.replace(original_target_number, new_number)
         return sentence.replace(target_number_unit.text_part, with_new_number)
 
     @staticmethod
-    def replace_unit_number(sentence: str, original_number_unit: NumberUnitFinderResult, src_number: Number, new_number: Number, new_unit: Unit, language: Language, *, modifier=False) -> str:
-        new_number = Replacer.__round_to_valid_digits(src_number, new_number)
-        new_number, used_scaling = Replacer.__add_scaling_word(original_number_unit, new_number, language)
+    def replace_unit_number(sentence: str, source_number_unit: NumberUnitFinderResult, target_number_unit: NumberUnitFinderResult, new_number: Number, new_unit: Unit, language: Language) -> str:
+        """Replace number and unit withing given part of sentence.
 
-        if new_unit.before_number:  # and not used_scaling:
+        In the given part of the sentence the number and unit is replaced
+        for another ones (given as a parameters).
+
+        Numbers are rounded and scaling words are added when necessary.
+
+        It has support for original translated number was a number modifier.
+
+        :param sentence: Sentence to be replaced in
+        :param source_number_unit: NumberUnit part from the source sentence
+        :param target_number_unit: NumberUnit part from the target sentence
+        :param new_number: Number to be replaced with
+        :param new_unit: Unit to be replaced with
+        :param language: Language of the sentence to be replaced in
+        :return: Sentence with replaced wrong number
+        """
+        new_number = Replacer.__round_to_valid_digits(source_number_unit.number, new_number)
+        new_number, used_scaling = Replacer.__add_scaling_word(source_number_unit, target_number_unit, new_number, language)
+
+        if new_unit.before_number:
             replacement = new_unit.word + (" " if len(new_unit.word) > 1 else "") + str(new_number)
-        # elif new_unit.before_number:
-        #    non_abbreviation_unit = units.get_correct_unit(language, new_number, original_number_unit.unit, new_unit, new_unit.category, abbreviation=False)
-        #    replacement = new_number + " " + non_abbreviation_unit.word
-        elif modifier:
-            singular_unit = units.get_correct_unit(Languages.EN, 1, original_number_unit.unit, new_unit, new_unit.category, modifier=True)
+
+        elif target_number_unit.modifier:
+            singular_unit = units.get_correct_unit(Languages.EN, 1, target_number_unit.unit, new_unit, modifier=True)
             replacement = str(new_number) + "-" + singular_unit.word
+
         else:
             replacement = str(new_number) + " " + new_unit.word
 
-        return sentence.replace(original_number_unit.text_part, replacement)
+        return sentence.replace(target_number_unit.text_part, replacement)
 
     @staticmethod
-    def __round_to_valid_digits(original_number: Number, new_number: Number):
+    def __round_to_valid_digits(original_number: Number, new_number: Number) -> Number:
+        """Round the given number to specific count of valid digits
+
+        Valid digits are all digits except zeros and the end of the number.
+
+        Methods round up numbers to n+1 valid digits, where n is count of valid
+        digits of original number.
+
+        Example:
+            45 124 000 has 5 valid digits
+            From round up number 123 456 789 123 to 6 valid digits, so => 123 457 000 000
+
+        :param original_number: Number to find out count of valid digits of
+        :param new_number: Number to be rounded up
+        :return: Rounded number
+        """
+        if original_number == new_number:
+            return new_number
+
         # Find out count of valid digits
         valid_digits = sum([ch.isdigit() for ch in str(original_number)])
         for ch in reversed(str(original_number)):
@@ -89,46 +150,69 @@ class Replacer:
             return round(new_number, valid_digits - before_point)
 
     @staticmethod
-    def __add_scaling_word(original_number: NumberUnitFinderResult, new_number: Number, language: Language):
-        #if not original_number.scaling:
-        #    return str(new_number), False
-        # TODO: Smarter deciding
+    def __add_scaling_word(source_number_unit: NumberUnitFinderResult, target_number_unit: NumberUnitFinderResult, new_number: Number, language: Language) -> Tuple[str, bool]:
+        """Add scaling word if there can be one.
+
+        It decides based on the new number if there should be same scaling word
+        and which specific it should be. It is decided based on validity rules declared
+        within the list of scaling words.
+
+        As a scaling word is selected that one, which value is last smaller value than the new number.
+
+        When the number is same as in the source sentence, the scaling level from source
+        sentence is used.
+
+        Number is edited to be displayed with separators used in given language.
+
+        :param source_number_unit: NumberUnit part from the source sentence
+        :param target_number_unit: NumberUnit part from the target sentence
+        :param new_number: Number to scaling word adding to
+        :param language: Language of the sentence to be replaced in
+        :return: Sentence with replaced wrong number
+        """
+        if not source_number_unit.scaling and not target_number_unit.scaling:
+            return str(Replacer.__construct_right_form_of_number(language, new_number)), False
 
         last_possible_scaling = None
         for word, scaling_tuple in language.big_numbers_scale.items():
             if scaling_tuple[0] < new_number:
                 last_possible_scaling = scaling_tuple[0]
 
+        if new_number == source_number_unit.number and source_number_unit.scaling:
+            last_possible_scaling = source_number_unit.scaling
+
         if not last_possible_scaling:
-            return str(new_number), False
+            return str(Replacer.__construct_right_form_of_number(language, new_number)), False
 
         divided = new_number / last_possible_scaling
         divided = int(divided) if divided.is_integer() else divided
 
         word = Replacer.__find_correct_scaling_word(last_possible_scaling, divided, language)
         if not word:
-            return str(new_number), False
+            return str(Replacer.__construct_right_form_of_number(language, new_number)), False
 
-        return str(divided) + " " + word, True
+        return str(Replacer.__construct_right_form_of_number(language, divided)) + " " + word, True
 
     @staticmethod
-    def __find_correct_scaling_word(scaling_number, number, language):
+    def __find_correct_scaling_word(scaling_number: int, number: Number, language: Language) -> Optional[str]:
+        """Find best scaling word based on rules defined in scaling word list"""
+
         for word, scaling_tuple in {k: v for k, v in language.big_numbers_scale.items() if v[0] == scaling_number}.items():
             condition = scaling_tuple[1]
 
-            if condition == None:
+            if condition == None:  # Word cannot be used for replacing
                 continue
 
-            if condition == []:
+            if condition == []:  # Word can be used for all numbers
                 return word
 
-            if isinstance(number, float) and float in condition:
+            if isinstance(number, float) and float in condition:  # Word can be used for all float numbers
                 return word
 
-            if number in condition:
+            if number in condition:  # Number is specified concretely
                 return word
 
-            for interval in [interval for interval in condition if isinstance(interval, tuple)]:
+            for interval in [interval for interval in condition if isinstance(interval, tuple)]:  # Number is within a range
                 left, right = interval
                 if left is None and right is not None and number < right:
                     return word
@@ -140,7 +224,8 @@ class Replacer:
         return None
 
     @staticmethod
-    def construct_right_form_of_number(language: Language, number: Number) -> str:
+    def __construct_right_form_of_number(language: Language, number: Number) -> str:
+        """Edit number to use separators based on given language"""
         string_number = str(number)
         parts = string_number.split(".")
         before_dot = parts[0]
@@ -158,9 +243,6 @@ class Replacer:
             result.append(before_dot[index])
             index -= 1
             digits_count += 1
-
-
-
 
         before_dot = "".join(reversed(result))
 

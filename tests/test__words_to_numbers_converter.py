@@ -1,5 +1,3 @@
-import pytest
-
 from fixer._languages import Languages
 from fixer._words_to_numbers_converter import WordsNumbersConverter
 
@@ -13,7 +11,7 @@ def test_convert_28():
 
 
 def test_convert_53():
-    assert WordsNumbersConverter.convert(["tři", "a", "padesát"], Languages.CS) == 53
+    assert WordsNumbersConverter.convert(["třiapadesát"], Languages.CS) == 53
 
 
 def test_convert_167():
@@ -29,7 +27,7 @@ def test_convert_1591():
 
 
 def test_convert_85000():
-    assert WordsNumbersConverter.convert(["pět", "a", "osmdesát", "tisíc"], Languages.CS) == 85000
+    assert WordsNumbersConverter.convert(["pětaosmdesát", "tisíc"], Languages.CS) == 85000
 
 
 def test_convert_150000():
@@ -58,3 +56,8 @@ def test_convert_61():
 
 def test_convert_25():
     assert WordsNumbersConverter.convert(["pětadvacet"], Languages.CS) == 25
+
+
+def test_convert_25_en():
+    # english package has custom tests
+    assert WordsNumbersConverter.convert(["twenty", "five"], Languages.EN) == 25

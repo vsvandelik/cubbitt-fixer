@@ -12,6 +12,6 @@ target_units:
     - F # [C|F]
 exchange_rates: cnb # [cnb|*list of rates - USD, EUR, GBP*]
 tools: # sublist of [separators|names|units]
-    #- separators
-    - names
-    #- units
+    - separators
+    #- names
+    - units

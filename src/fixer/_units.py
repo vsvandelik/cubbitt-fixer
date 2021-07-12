@@ -1,5 +1,6 @@
+import re
 from enum import Enum, auto
-from typing import Union, Optional, List, Tuple
+from typing import Union, Optional, List, Tuple, Callable, Dict
 
 from ._custom_types import Number
 from ._exchange_rates import exchange_rates_convertor
@@ -7,25 +8,37 @@ from ._languages import Language, Languages
 
 
 class UnitsSystem(Enum):
-    SI = auto()
-    IMPERIAL = auto()
-    US_CUSTOMARY = auto()
-    CZK = auto()
-    GBP = auto()
-    USD = auto()
-    EUR = auto()
-    C = auto()
-    F = auto()
+    """List of unit systems - groups of units"""
+    SI = auto()  #: Basic SI units (meters, grams)
+    IMPERIAL = auto()  #: Basic imperial units (inches, pounds)
+    CZK = auto()  #: Czech crowns
+    GBP = auto()  #: Great Britain Pounds
+    USD = auto()  #: US dollars
+    EUR = auto()  #: Euros
+    C = auto()  #: Degree Celsius
+    F = auto()  #: Degree Fahrenheit
 
 
 class UnitDialect(Enum):
+    """Dialect of the unit (british or american english) - NOT USED IN CODE"""
     BrE = 0  # British english
     AmE = 1  # American english
 
 
 class UnitCategory:
+    """Wrapper data class for single unit category
 
-    def __init__(self, system: UnitsSystem, base, base_coefficient: Optional[float], *, conversion=None):
+    As category is considered one single unit (different forms of unit words are still one category).
+    """
+
+    def __init__(self, system: UnitsSystem, base, base_coefficient: Optional[float], *, conversion: Optional[Callable] = None):
+        """
+        :param system: System category belongs to
+        :param base: Instance of another UnitCategory used as base (eg. meters are based for distance in SI)
+        :type base: UnitCategory or None
+        :param base_coefficient: Coefficient to convert from base category to this one
+        :param conversion: Function to converts between different UnitSystems, only for base categories
+        """
         self.system = system
         self.base = base
         self.base_coefficient = base_coefficient
@@ -33,9 +46,24 @@ class UnitCategory:
 
 
 class UnitsConvertors:
+    """Wrapper for methods used for conversion between unit systems."""
 
     @staticmethod
     def get_best_unit_for_converted_number(number: Number, category: UnitCategory, language: Language, original_unit, translated_unit):
+        """Find best unit category for given number
+
+        Example
+            Number was converted from inches to meters. In meters it is 2500 ->
+            this method should convert the number to 2.5 and used KM as unit category.
+
+        :param number: Number to search unit category for
+        :param category: Current unit category (some base category given from convertors)
+        :param language: Language of the units
+        :param original_unit: Unit used in original sentence
+        :param translated_unit: Unit used in translated sentence
+        :return: Final number with best available unit
+        :rtype: Tuple[Number, Unit]
+        """
         best_number, best_category = number, category
 
         if category == translated_unit.category:
@@ -52,12 +80,13 @@ class UnitsConvertors:
                 best_number = category_number
                 best_category = category
 
-        best_unit = units.get_correct_unit(language, best_number, original_unit, translated_unit, best_category)
+        best_unit = units.get_correct_unit(language, best_number, original_unit, strict_category=best_category)
 
         return best_number, best_unit
 
     @staticmethod
-    def length_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
+    def length_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+        """Convert units of length between systems (SI and imperial)"""
         if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number / 0.3048
             target_category = UnitCategories.FT
@@ -71,7 +100,8 @@ class UnitsConvertors:
         return target_number, target_category
 
     @staticmethod
-    def weight_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
+    def weight_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+        """Convert units of weight between systems (SI and imperial)"""
         if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number / 453.59237
             target_category = UnitCategories.LB
@@ -85,7 +115,8 @@ class UnitsConvertors:
         return target_number, target_category
 
     @staticmethod
-    def area_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
+    def area_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+        """Convert units of area between systems (SI and imperial)"""
         if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number * 10.764
             target_category = UnitCategories.FT2
@@ -99,7 +130,24 @@ class UnitsConvertors:
         return target_number, target_category
 
     @staticmethod
-    def currency_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
+    def volume_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+        """Convert units of volume between systems (SI and imperial)"""
+        if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
+            target_number = original_number * 35.315
+            target_category = UnitCategories.FT3
+        elif UnitsSystem.IMPERIAL == original_category.system and UnitsSystem.SI in target_system:
+            target_number = original_number / 35.315
+            target_category = UnitCategories.M3
+        else:
+            target_number = original_number
+            target_category = original_category
+
+        return target_number, target_category
+
+    @staticmethod
+    def currency_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+        """Convert currencies"""
+
         categories_strings = {
             UnitCategories.CZK: 'CZK',
             UnitCategories.USD: 'USD',
@@ -122,13 +170,14 @@ class UnitsConvertors:
                 break
 
         if not target_category:
-            return original_category, original_category
+            return original_number, original_category
 
         rate = exchange_rates_convertor.get_rate(categories_strings[original_category], categories_strings[target_category], original_number)
         return rate, target_category
 
     @staticmethod
-    def temperature_convertor(original_number: Number, original_category: UnitCategory, target_system: UnitsSystem):
+    def temperature_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+        """Convert temperatures (between Celsius and Fahrenheit)"""
         if UnitsSystem.C == original_category.system and UnitsSystem.F in target_system:
             target_number = original_number * 1.8 + 32
             target_category = UnitCategories.F
@@ -143,11 +192,12 @@ class UnitsConvertors:
 
 
 class UnitCategories:
+    """List of all unit categories (units) with basic information"""
     MS = UnitCategory(UnitsSystem.SI, None, None)
     KMH = UnitCategory(UnitsSystem.SI, MS, 1000 / 3600)
     M2 = UnitCategory(UnitsSystem.SI, None, None, conversion=UnitsConvertors.area_convertor)
     KM2 = UnitCategory(UnitsSystem.SI, M2, 1000000)
-    M3 = UnitCategory(UnitsSystem.SI, None, None)
+    M3 = UnitCategory(UnitsSystem.SI, None, None, conversion=UnitsConvertors.volume_convertor)
     M = UnitCategory(UnitsSystem.SI, None, None, conversion=UnitsConvertors.length_convertor)
     KM = UnitCategory(UnitsSystem.SI, M, 1000)
     DM = UnitCategory(UnitsSystem.SI, M, 0.1)
@@ -161,16 +211,18 @@ class UnitCategories:
     YD = UnitCategory(UnitsSystem.IMPERIAL, FT, 3)
     MI = UnitCategory(UnitsSystem.IMPERIAL, FT, 5280)
     FT2 = UnitCategory(UnitsSystem.IMPERIAL, None, None, conversion=UnitsConvertors.area_convertor)
+    FT3 = UnitCategory(UnitsSystem.IMPERIAL, None, None, conversion=UnitsConvertors.volume_convertor)
     MI2 = UnitCategory(UnitsSystem.IMPERIAL, FT2, 27878400)
     CZK = UnitCategory(UnitsSystem.CZK, None, None, conversion=UnitsConvertors.currency_convertor)
     USD = UnitCategory(UnitsSystem.USD, None, None, conversion=UnitsConvertors.currency_convertor)
     GBP = UnitCategory(UnitsSystem.GBP, None, None, conversion=UnitsConvertors.currency_convertor)
     EUR = UnitCategory(UnitsSystem.EUR, None, None, conversion=UnitsConvertors.currency_convertor)
     C = UnitCategory(UnitsSystem.C, None, None, conversion=UnitsConvertors.temperature_convertor)
-    F = UnitCategory(UnitsSystem.F, None, None, conversion=UnitsConvertors.currency_convertor)
+    F = UnitCategory(UnitsSystem.F, None, None, conversion=UnitsConvertors.temperature_convertor)
 
     @staticmethod
-    def get_categories_by_groups():
+    def get_categories_by_groups() -> Dict[UnitCategory, List[UnitCategory]]:
+        """List of all unit categories divided into lists by base categories"""
         categories_groups = {}
 
         all_categories = [a for a in dir(UnitCategories) if not a.startswith('__')]
@@ -194,6 +246,16 @@ units_categories_groups = UnitCategories.get_categories_by_groups()
 
 
 class Unit:
+    """Class for holding information about one unit form (eg. 'meter' and 'meters' are different Unit Instances)
+
+    :ivar word: Text form of the unit
+    :ivar category: Category of the unit
+    :ivar language: Language of the unit
+    :ivar numbers_validity: Numbers for whose is this unit form valid (singular forms, etc.)
+    :ivar abbreviation: Flag whenever the unit form is an abbreviation
+    :ivar dialect: Dialect of the unit form (british or american english)
+    :ivar before_number: Flag whenever the unit can be placed in front of the number
+    """
 
     def __init__(self,
                  word: str,
@@ -203,25 +265,28 @@ class Unit:
                  abbreviation: bool,
                  dialect: Optional[UnitDialect],
                  before_number: bool = False):
+        """
+        :param word: Text form of the unit
+        :param category: Category of the unit
+        :param language: Language of the unit
+        :param numbers_validity: Numbers for whose is this unit form valid (singular forms, etc.)
+        :param abbreviation: Flag whenever the unit form is an abbreviation
+        :param dialect: Dialect of the unit form (british or american english)
+        :param before_number: Flag whenever the unit can be placed in front of the number
+        """
         self.word = word
         self.category = category
         self.language = language
         self.numbers_validity = numbers_validity
         self.abbreviation = abbreviation
         self.before_number = before_number
-
-        if dialect:
-            self.dialect = dialect
-        else:
-            self.dialect = None
+        self.dialect = dialect
 
     @staticmethod
     def number_pass_numbers_validity(validity: List, number: Number) -> bool:
+        """Checks whenever the unit validity rules matches the number"""
         if isinstance(number, float):
-            if float in validity:
-                return True
-            else:
-                return False
+            return True if float in validity else False
 
         if number in validity:
             return True
@@ -242,21 +307,42 @@ class Unit:
 
 
 class UnitsWrapper:
+    """Wrapper for list of all units and related methods."""
 
     def __init__(self):
         self.__units = []
         self.__units_by_languages = {}
+        self.__units_before_by_languages = {}
         self.__units_by_language_category = {}
         self.__single_symbol = []
+        self.__regex_unit_for_language = {}
+        self.__regex_unit_before_for_language = {}
 
     def add_unit(self, unit: Unit):
+        """Add new unit to the list and remove cached values"""
         self.__units.append(unit)
         self.__units_by_languages = {}
+        self.__units_before_by_languages = {}
+        self.__regex_unit_for_language = {}
+        self.__regex_unit_before_for_language = {}
         self.__units_by_language_category = None
+        self.__single_symbol = []
 
-    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, replacement_for: Unit = None, strict_category=None, *, modifier=False, abbreviation=None):
-        if not strict_category:
-            strict_category = original_unit.category
+    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, *, strict_category=None, modifier=False, abbreviation=None) -> Unit:
+        """Find best unit form to use for given number.
+
+        All units are marked with score for different criteria (whenever it
+        is number modifier, abbreviation and maily if it passed the validity check).
+
+        :param language: Language of the unit
+        :param number: Number to find unit for
+        :param original_unit: Unit used in source sentence
+        :param strict_category: Category of the searched unit
+        :param modifier: Whenever looking for unit to number modifier
+        :param abbreviation: Whenever looking for abbreviation unit
+        :return: Unit with best match
+        """
+        strict_category = original_unit.category if not strict_category else strict_category
 
         options_list = []
         for unit in self.__units:
@@ -265,21 +351,21 @@ class UnitsWrapper:
 
             score = 0
 
-            #if replacement_for and unit.dialect == replacement_for.dialect:
-            #    score += 1
-
             if modifier and '-' in unit.word:
                 score += 1
 
             if abbreviation is None and unit.abbreviation == original_unit.abbreviation:
                 score += 2
-            elif abbreviation is False and unit.abbreviation == False:
+
+            elif abbreviation is False and not unit.abbreviation:
                 score += 2
-            elif abbreviation is True and unit.abbreviation == True:
+
+            elif abbreviation is True and unit.abbreviation:
                 score += 2
 
             if not unit.numbers_validity:
                 score += 1
+
             elif Unit.number_pass_numbers_validity(unit.numbers_validity, number):
                 score += 3
 
@@ -289,6 +375,18 @@ class UnitsWrapper:
         return options_list[0][1]
 
     def convert_number(self, target_language: Language, target_unit_system: List[UnitsSystem], actual_number: Number, original_unit: Unit, translated_unit: Unit) -> Tuple[Optional[Number], Optional[Unit]]:
+        """Convert number with unit into different unit system
+
+        Based on target unit system some unit category is selected, number converted and best fitting
+        unit is selected.
+
+        :param target_language: Language of the sentence and desired unit
+        :param target_unit_system: List of UnitSystems preferred by user
+        :param actual_number: Number from translated sentence to be converted
+        :param original_unit: Unit of the actual number
+        :param translated_unit: Unit used in the translated sentence
+        :return: Best fitting number and unit
+        """
         actual_category = original_unit.category
         if actual_category.base:
             actual_number = actual_number * original_unit.category.base_coefficient
@@ -302,13 +400,15 @@ class UnitsWrapper:
 
         return converted_number, converted_unit
 
-    def convert_to_base_in_category(self, unit: Unit, number: Number):
+    def convert_to_base_in_category(self, unit: Unit, number: Number) -> Number:
+        """Convert number to base unit in the category (eg. 1 km is converted to 1000 meters)"""
         if not unit.category.base:
             return number
 
         return number * unit.category.base_coefficient
 
-    def convert_to_base_in_another_system(self, unit: Unit, number: Number, needed_category: UnitCategory):
+    def convert_to_base_in_another_system(self, unit: Unit, number: Number, needed_category: UnitCategory) -> Optional[Number]:
+        """Convert number to base unit in the category and convert that to another unit system"""
         actual_category = unit.category
         if actual_category.base:
             number = number * unit.category.base_coefficient
@@ -321,68 +421,60 @@ class UnitsWrapper:
 
         return converted_number
 
-    def get_list_units_by_category_language(self) -> dict:
+    def get_list_units_by_category_language(self) -> Dict[Language, Dict[UnitCategory, List[Unit]]]:
+        """Get list of units divided by language and unit category. Uses caching"""
         if self.__units_by_language_category:
             return self.__units_by_language_category
 
-        self.__units_by_language_category = {}
-        for language in Languages.get_languages_list():
-            self.__units_by_language_category[language] = {}
+        self.__units_by_language_category = {lang: {} for lang in Languages.get_languages_list()}
 
         for unit in self.__units:
-            if unit.category not in self.__units_by_language_category[unit.language].keys():
+            if unit.category not in self.__units_by_language_category[unit.language]:
                 self.__units_by_language_category[unit.language][unit.category] = []
 
             self.__units_by_language_category[unit.language][unit.category].append(unit)
 
         return self.__units_by_language_category
 
-    def get_units_by_category_language(self, category: UnitCategory, language: Language) -> list:
+    def get_units_by_category_language(self, category: UnitCategory, language: Language) -> List[Unit]:
+        """Get list of units by given language and unit category"""
         if not self.__units_by_language_category:
             self.get_list_units_by_category_language()
 
         return self.__units_by_language_category[language][category]
 
     def get_unit_by_word(self, word: str, language: Language) -> Optional[Unit]:
-        for unit in self.__units:
-            if unit.language == language and unit.word == word:
-                return unit
-
-        return None
+        """Get first unit with given word in given language"""
+        return next((unit for unit in self.get_all_units_for_language(language) if unit.word == word), None)
 
     def get_units_words_list(self, language: Language) -> List[str]:
-        units_for_language = self.get_all_units_for_language(language)
-        return [unit.word for unit in units_for_language]
-
-    def get_single_char_units_symbols(self):
-        if not self.__single_symbol:
-            self.__single_symbol = [unit.word for unit in self.__units if unit.abbreviation and len(unit.word) == 1 and not unit.word[0].isalpha()]
-
-        return self.__single_symbol
+        """Get first unit with given word in given language"""
+        return [unit.word for unit in self.get_all_units_for_language(language)]
 
     def get_regex_units_for_language(self, language: Language) -> str:
-        units_for_language = self.get_all_units_for_language(language)
+        """Get list of words of units in given language separated by |"""
+        if language not in self.__regex_unit_for_language:
+            self.__regex_unit_for_language[language] = '|'.join([re.escape(unit.word) for unit in self.get_all_units_for_language(language)])
 
-        pattern = '|'.join([unit.word for unit in units_for_language])
-
-        return pattern.replace('$', '\$')
+        return self.__regex_unit_for_language[language]
 
     def get_regex_units_for_language_before_numbers(self, language: Language) -> str:
-        units_for_language = self.get_all_units_for_language(language)
+        """Get list of words of units used before number in given language separated by |"""
+        if language not in self.__regex_unit_before_for_language:
+            self.__regex_unit_before_for_language[language] = '|'.join([re.escape(unit.word) for unit in self.get_all_units_for_language(language) if unit.before_number])
 
-        pattern = '|'.join([unit.word for unit in units_for_language if unit.before_number is True])
+        return self.__regex_unit_before_for_language[language]
 
-        pattern = '<!>' if pattern == '' else pattern
+    def get_units_for_language_before_numbers_list(self, language: Language) -> List[str]:
+        """Get list of words of units used before number in given language"""
+        if language not in self.__units_before_by_languages:
+            self.__units_before_by_languages[language] = [unit.word for unit in self.get_all_units_for_language(language) if unit.before_number]
 
-        return pattern.replace('$', '\$')
-
-    def get_regex_units_for_language_before_numbers_list(self, language: Language) -> List[str]:
-        units_for_language = self.get_all_units_for_language(language)
-
-        return [unit.word for unit in units_for_language if unit.before_number is True]
+        return self.__units_before_by_languages[language]
 
     def get_all_units_for_language(self, language: Language) -> List[Unit]:
-        if language not in self.__units_by_languages.keys():
+        """Get list of units by language"""
+        if language not in self.__units_by_languages:
             self.__units_by_languages[language] = []
             for unit in self.__units:
                 if unit.language == language:
@@ -615,6 +707,15 @@ units.add_unit(Unit('square-foot', UnitCategories.FT2, Languages.EN, numbers_val
 units.add_unit(Unit('square feet', UnitCategories.FT2, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('square-feet', UnitCategories.FT2, Languages.EN, numbers_validity_not_ones, False, None))
 
+units.add_unit(Unit('stopa krychlová', UnitCategories.FT3, Languages.CS, numbers_validity_ones, False, None))
+units.add_unit(Unit('stopy krychlové', UnitCategories.FT3, Languages.CS, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('stop krychlových', UnitCategories.FT3, Languages.CS, numbers_validity_more_than_5, False, None))
+
+units.add_unit(Unit('cubic foot', UnitCategories.FT3, Languages.EN, numbers_validity_ones, False, None))
+units.add_unit(Unit('cubic-foot', UnitCategories.FT3, Languages.EN, numbers_validity_ones, False, None))
+units.add_unit(Unit('cubic feet', UnitCategories.FT3, Languages.EN, numbers_validity_not_ones, False, None))
+units.add_unit(Unit('cubic-feet', UnitCategories.FT3, Languages.EN, numbers_validity_not_ones, False, None))
+
 units.add_unit(Unit('stopa', UnitCategories.FT, Languages.CS, numbers_validity_ones, False, None))
 units.add_unit(Unit('stopy', UnitCategories.FT, Languages.CS, numbers_validity_2_3_4, False, None))
 units.add_unit(Unit('stop', UnitCategories.FT, Languages.CS, numbers_validity_more_than_5, False, None))
@@ -646,7 +747,7 @@ units.add_unit(Unit('mi', UnitCategories.MI, Languages.EN, None, True, None))
 units.add_unit(Unit('mile', UnitCategories.MI, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('miles', UnitCategories.MI, Languages.EN, numbers_validity_not_ones, False, None))
 
-#units.add_unit(Unit('pounds', UnitCategories.LB, Languages.EN, numbers_validity_not_ones, False, None))
+# units.add_unit(Unit('pounds', UnitCategories.LB, Languages.EN, numbers_validity_not_ones, False, None))
 
 units.add_unit(Unit('kč', UnitCategories.CZK, Languages.CS, None, True, None))
 units.add_unit(Unit(',-kč', UnitCategories.CZK, Languages.CS, None, True, None))
