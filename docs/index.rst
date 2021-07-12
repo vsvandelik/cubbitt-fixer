@@ -14,6 +14,7 @@ CUBBITT postprocessor's documentation!
    :maxdepth: 2
    :caption: Main fixers
 
+   files/fixer_tool_interface
    files/numbers_fixer
    files/separators_fixer
    files/names_fixer

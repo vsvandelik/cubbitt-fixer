@@ -1,13 +1,14 @@
 import re
 from typing import List, Tuple
 
+from ._fixer_tool import FixerToolInterface
 from ._languages import Language
 from ._sentence_pair import SentencePair
-from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 from .fixer_configurator import FixerConfigurator
+from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 
 
-class DecimalSeparatorFixer:
+class DecimalSeparatorFixer(FixerToolInterface):
     """Fixer of wrong translation of decimal / thousands separator
 
     It checks whenever the translator correctly change decimal separator

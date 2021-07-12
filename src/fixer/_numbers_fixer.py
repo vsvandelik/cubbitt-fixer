@@ -3,11 +3,12 @@ from typing import List, Tuple, Dict, Set
 from fixer._words_to_numbers_converter import WordsNumbersConverter
 
 from ._finder import Finder, NumberUnitFinderResult
+from ._fixer_tool import FixerToolInterface
 from ._replacer import Replacer
 from ._sentence_pair import SentencePair
-from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 from ._units import units
 from .fixer_configurator import FixerConfigurator, FixerModes
+from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 
 
 class Relationship:
@@ -50,7 +51,7 @@ class Relationship:
         return levels[level]
 
 
-class NumberFixer:
+class NumberFixer(FixerToolInterface):
     """Fixer for problems with numbers and units.
 
     Checks whenever sentence contains any number-unit mistakes and tries to fix them. Based

@@ -5,8 +5,8 @@ from ._decimal_separator_fixer import DecimalSeparatorFixer
 from ._names_fixer import NamesFixer
 from ._numbers_fixer import NumberFixer
 from ._sentence_pair import SentencePair
-from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 from .fixer_configurator import FixerConfigurator, FixerTools
+from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 
 
 class Fixer:

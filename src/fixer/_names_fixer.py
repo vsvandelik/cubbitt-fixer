@@ -1,13 +1,14 @@
 from statistics import mode
 from typing import Tuple, List, Optional
 
+from ._fixer_tool import FixerToolInterface
 from ._languages import Languages
 from ._sentence_pair import SentencePair
-from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 from .fixer_configurator import FixerConfigurator
+from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 
 
-class NamesFixer:
+class NamesFixer(FixerToolInterface):
     """Fixer of wrong translation of proper names of person
 
     Via external tools for recognising proper names of person it
