@@ -25,15 +25,14 @@ class CNBExchangeRates(ExchangeRatesInterface):
     rates from the national bank.
 
     All rates are saved with respect to czech crown.
+
+    :param predefined_rates: Dictionary of exchange rates given by configuration
     """
 
     _CNB_API_RATES = "https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/kurzy-devizoveho-trhu/denni_kurz.txt"
     _UNITS_CURRENCIES = ['CZK', 'GBP', 'EUR', 'USD']
 
     def __init__(self, predefined_rates: Dict[str, float] = None):
-        """
-        :param predefined_rates: Dictionary of exchange rates given by configuration
-        """
         self.rates = CNBExchangeRates.load_rates()
 
         if predefined_rates:

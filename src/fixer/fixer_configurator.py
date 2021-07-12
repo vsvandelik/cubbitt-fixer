@@ -93,7 +93,7 @@ class FixerConfigurator:
         return instances[label]
 
     @staticmethod
-    def __verify_number_interval(min_value: float, max_value: float, config: dict, config_option: str) -> str:
+    def __verify_number_interval(min_value: float, max_value: float, config: dict, config_option: str):
         """Verify if value in dictionary is filled and valid (in a range)"""
         if config_option not in config.keys():
             raise FixerConfiguratorException(f"Configuration file is broken. Some required fields ({config_option}) are missing.")

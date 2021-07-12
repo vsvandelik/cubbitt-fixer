@@ -1,49 +1,52 @@
-.. Lindat translation postprocessor documentation master file, created by
-   sphinx-quickstart on Thu Mar 18 15:50:00 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to Lindat translation postprocessor's documentation!
-============================================================
-
-.. automodule:: fixer
-   :members:
-   :undoc-members:
-   :private-members:
-
-.. automodule:: fixer._aligner
-   :members:
-   :undoc-members:
-
-.. automodule:: fixer._languages
-   :members:
-   :undoc-members:
-   :private-members:
-
-.. automodule:: fixer._numbers_fixer
-   :members:
-   :undoc-members:
-   :private-members:
-
-.. automodule:: fixer._statistics
-   :members:
-   :undoc-members:
-   :private-members:
-
-.. automodule:: fixer._units
-   :members:
-   :undoc-members:
-   :private-members:
+CUBBITT postprocessor's documentation!
+======================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Public API
+
+   files/fixer
+   files/statistics
+   files/configurator
+   files/splitter
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Main fixers
+
+   files/numbers_fixer
+   files/separators_fixer
+   files/names_fixer
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Common classes
+
+   files/languages.rst
+   files/data_types.rst
+   files/sentence_pair.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Numbers fixer (helpers)
+
+   files/units.rst
+   files/finder.rst
+   files/replacer.rst
+   files/words_to_digits.rst
+
+.. toctree::
+   :caption: External tools
+
+   files/aligner
+   files/lemmatization
+   files/names_tagger
+   files/exchange_rates
 
 
 
 Indices and tables
 ==================
 
-* :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
+

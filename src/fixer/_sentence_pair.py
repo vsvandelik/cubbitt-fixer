@@ -8,14 +8,13 @@ class SentencePair:
 
     Mainly the output of externals tools are saved into this class so they do not
     need to be called again.
+
+    :param source_text: Original text from the user
+    :param target_text: Translated text from the translator
+    :param configuration: Configuration of the tool
     """
 
     def __init__(self, source_text: str, target_text: str, configuration: FixerConfigurator):
-        """
-        :param source_text: Original text from the user
-        :param target_text: Translated text from the translator
-        :param configuration: Configuration of the tool
-        """
         self.__source_text = source_text
         self.__target_text = self.__original_target_text = target_text
         self.__configuration = configuration

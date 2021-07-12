@@ -14,12 +14,11 @@ class DecimalSeparatorFixer:
     from source language from target language because the separator
     is different in individual languages (eg. in czech is used '.' for
     thousands and ',' for decimal numbers, in english it is the opposite).
+
+    :param configuration: Configuration of the package
     """
 
     def __init__(self, configuration: FixerConfigurator):
-        """
-        :param configuration: Configuration of the package
-        """
         self.configuration = configuration
 
         self.source_lang = configuration.source_lang

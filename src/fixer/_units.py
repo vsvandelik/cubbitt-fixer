@@ -29,16 +29,15 @@ class UnitCategory:
     """Wrapper data class for single unit category
 
     As category is considered one single unit (different forms of unit words are still one category).
+
+    :param system: System category belongs to
+    :param base: Instance of another UnitCategory used as base (eg. meters are based for distance in SI)
+    :type base: UnitCategory or None
+    :param base_coefficient: Coefficient to convert from base category to this one
+    :param conversion: Function to converts between different UnitSystems, only for base categories
     """
 
     def __init__(self, system: UnitsSystem, base, base_coefficient: Optional[float], *, conversion: Optional[Callable] = None):
-        """
-        :param system: System category belongs to
-        :param base: Instance of another UnitCategory used as base (eg. meters are based for distance in SI)
-        :type base: UnitCategory or None
-        :param base_coefficient: Coefficient to convert from base category to this one
-        :param conversion: Function to converts between different UnitSystems, only for base categories
-        """
         self.system = system
         self.base = base
         self.base_coefficient = base_coefficient
@@ -85,7 +84,7 @@ class UnitsConvertors:
         return best_number, best_unit
 
     @staticmethod
-    def length_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+    def length_convertor(original_number: Number, original_category: UnitCategory, target_system: List[UnitsSystem]) -> Tuple[Number, UnitCategory]:
         """Convert units of length between systems (SI and imperial)"""
         if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number / 0.3048
@@ -100,7 +99,7 @@ class UnitsConvertors:
         return target_number, target_category
 
     @staticmethod
-    def weight_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+    def weight_convertor(original_number: Number, original_category: UnitCategory, target_system: List[UnitsSystem]) -> Tuple[Number, UnitCategory]:
         """Convert units of weight between systems (SI and imperial)"""
         if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number / 453.59237
@@ -115,7 +114,7 @@ class UnitsConvertors:
         return target_number, target_category
 
     @staticmethod
-    def area_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+    def area_convertor(original_number: Number, original_category: UnitCategory, target_system: List[UnitsSystem]) -> Tuple[Number, UnitCategory]:
         """Convert units of area between systems (SI and imperial)"""
         if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number * 10.764
@@ -130,7 +129,7 @@ class UnitsConvertors:
         return target_number, target_category
 
     @staticmethod
-    def volume_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+    def volume_convertor(original_number: Number, original_category: UnitCategory, target_system: List[UnitsSystem]) -> Tuple[Number, UnitCategory]:
         """Convert units of volume between systems (SI and imperial)"""
         if UnitsSystem.SI == original_category.system and UnitsSystem.IMPERIAL in target_system:
             target_number = original_number * 35.315
@@ -145,7 +144,7 @@ class UnitsConvertors:
         return target_number, target_category
 
     @staticmethod
-    def currency_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+    def currency_convertor(original_number: Number, original_category: UnitCategory, target_system: List[UnitsSystem]) -> Tuple[Number, UnitCategory]:
         """Convert currencies"""
 
         categories_strings = {
@@ -176,7 +175,7 @@ class UnitsConvertors:
         return rate, target_category
 
     @staticmethod
-    def temperature_convertor(original_number: Number, original_category: UnitCategory, target_system: [UnitsSystem]) -> Tuple[Number, UnitCategory]:
+    def temperature_convertor(original_number: Number, original_category: UnitCategory, target_system: List[UnitsSystem]) -> Tuple[Number, UnitCategory]:
         """Convert temperatures (between Celsius and Fahrenheit)"""
         if UnitsSystem.C == original_category.system and UnitsSystem.F in target_system:
             target_number = original_number * 1.8 + 32
@@ -255,6 +254,13 @@ class Unit:
     :ivar abbreviation: Flag whenever the unit form is an abbreviation
     :ivar dialect: Dialect of the unit form (british or american english)
     :ivar before_number: Flag whenever the unit can be placed in front of the number
+    :param word: Text form of the unit
+    :param category: Category of the unit
+    :param language: Language of the unit
+    :param numbers_validity: Numbers for whose is this unit form valid (singular forms, etc.)
+    :param abbreviation: Flag whenever the unit form is an abbreviation
+    :param dialect: Dialect of the unit form (british or american english)
+    :param before_number: Flag whenever the unit can be placed in front of the number
     """
 
     def __init__(self,
@@ -265,15 +271,6 @@ class Unit:
                  abbreviation: bool,
                  dialect: Optional[UnitDialect],
                  before_number: bool = False):
-        """
-        :param word: Text form of the unit
-        :param category: Category of the unit
-        :param language: Language of the unit
-        :param numbers_validity: Numbers for whose is this unit form valid (singular forms, etc.)
-        :param abbreviation: Flag whenever the unit form is an abbreviation
-        :param dialect: Dialect of the unit form (british or american english)
-        :param before_number: Flag whenever the unit can be placed in front of the number
-        """
         self.word = word
         self.category = category
         self.language = language

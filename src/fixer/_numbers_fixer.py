@@ -57,12 +57,11 @@ class NumberFixer:
     on count of number-unit pairs concrete fix methods are selected.
 
     It can work with number followed with units and also individual numbers.
+
+    :param configuration: Configuration of the tool
     """
 
     def __init__(self, configuration: FixerConfigurator):
-        """
-        :param configuration: Configuration of the tool
-        """
         self.configuration = configuration
 
         self.source_lang = configuration.source_lang

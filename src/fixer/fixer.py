@@ -18,12 +18,11 @@ class Fixer:
       - checkong and replacement of numbers (possible with units)
 
     All exceptions are catched and logged into 'fixer.log' file.
+
+    :param configuration: Configuration instance
     """
 
     def __init__(self, configuration: FixerConfigurator):
-        """
-        :param configuration: Configuration instance
-        """
         self.fixers = []
         self.configuration = configuration
 
@@ -46,10 +45,10 @@ class Fixer:
 
         :param original_text: Text in source language for verifying the translation.
         :param translated_text: Text translated by translator.
-        :return: tuple with fixer output:
-            - sentence after fixing (possible the same as input)
-            - has changed flag
-            - list with flags labeling the sentence and the correction
+        :return:    - sentence after fixing (possible the same as input)
+                    - has changed flag
+                    - list with flags labeling the sentence and the correction
+
         """
 
         sentence_pair = SentencePair(original_text, translated_text, self.configuration)

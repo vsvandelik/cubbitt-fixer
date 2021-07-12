@@ -16,12 +16,11 @@ class NamesFixer:
 
     Names in source and translated sentence are aligned with external
     aligner.
+
+    :param configuration: Configuration of the package
     """
 
     def __init__(self, configuration: FixerConfigurator):
-        """
-        :param configuration: Configuration of the package
-        """
         self.configuration = configuration
 
         self.source_lang = configuration.source_lang
@@ -60,6 +59,7 @@ class NamesFixer:
         """"Replace name in translated sentence for the name in source sentence.
 
         Lemmas of the names are used as the replacement.
+
         :param sentence_pair: Information about source and translated sentnce
         :param target_text: Translated sentence with possible changes
         :param source_name: Name in source sentence
@@ -86,9 +86,8 @@ class NamesFixer:
         After finishing the matching, the the replacement method is called.
 
         :param sentence_pair: Information about source and translated sentence
-        :return: two values
-          - string if some name was changed
-          - list of statistics marks
+        :return: - string if some name was changed
+                 - list of statistics marks
         """
         alignment = sentence_pair.alignment
 

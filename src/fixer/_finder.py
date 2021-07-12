@@ -18,15 +18,14 @@ class NumberUnitFinderResult:
     :ivar scaling: number used as a scaling in original sentence (eg. 1000 when used thousands)
     :ivar number_as_string: text representation of the number (if there was in original sentence)
     :ivar modifier: flag whenever the number and unit was used as a number modifier
+
+    :param number: Parsed number value
+    :param unit: Instance of unit (can be None when there is no unit)
+    :param approximately: Indicator if the value is approximate
+    :param text_part: Substring of the sentence with the number (and unit)
     """
 
     def __init__(self, number: Number, unit: Optional[Unit], approximately: bool, text_part: str):
-        """
-        :param number: Parsed number value
-        :param unit: Instance of unit (can be None when there is no unit)
-        :param approximately: Indicator if the value is approximate
-        :param text_part: Substring of the sentence with the number (and unit)
-        """
         self.number = number
         self.unit = unit
         self.approximately = approximately
@@ -71,7 +70,7 @@ class Finder:
     searching for the numbers written as text.
     """
 
-    __FIND_NUMBERS_PATTERN = prepare_find_numbers_pattern()
+    __FIND_NUMBERS_PATTERN = prepare_find_numbers_pattern() #: :meta hide-value:
 
     @staticmethod
     def find_number_unit_pairs(sentence: str, language: Language) -> List[NumberUnitFinderResult]:
