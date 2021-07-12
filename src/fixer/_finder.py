@@ -60,7 +60,7 @@ def prepare_find_numbers_pattern_one_language(language: Language) -> re.Pattern:
     scales = language.big_numbers_scale_keys
     units_all = units.get_regex_units_for_language(language)
 
-    return re.compile(rf"(?:(?P<unit>{units_before})\s?(?P<number>\d+(?:[ {sep_thousands}]\d{{3}})*(?:{sep_decimals}\d+)?)[\s-]?(?:(?P<scaling>{scales}|m)\b)?|(?P<a_number>\d+(?:[ {sep_thousands}]\d{{3}})*({sep_decimals}\d+)?)[\s-]?(?:(?P<a_scaling>{scales}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{units_all})?(?:\b|\s|$|[,.\s])|\d+\'\d+\")", re.IGNORECASE)
+    return re.compile(rf"(?:(?P<inches>\d+\'\d+\")|(?P<unit>{units_before})\s?(?P<number>\d+(?:[ {sep_thousands}]\d{{3}})*(?:{sep_decimals}\d+)?)[\s-]?(?:(?P<scaling>{scales}|m)\b)?|(?P<a_number>\d+(?:[ {sep_thousands}]\d{{3}})*({sep_decimals}\d+)?)[\s-]?(?:(?P<a_scaling>{scales}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{units_all})?(?:\b|\s|$|[,.\s]))", re.IGNORECASE)
 
 
 class Finder:
@@ -89,6 +89,14 @@ class Finder:
         pairs = []
         for part in re.finditer(Finder.__FIND_NUMBERS_PATTERN[language], sentence):
             whole_match = part.group(0).strip(" .,-")
+
+            if part.group("inches") and language == Languages.EN:  # Special behaviour for eg. 6'12"
+                substring = part.group("inches")
+                number = Finder.__convert_text_to_inches(substring)
+                unit = units.get_unit_by_word("inch", Languages.EN)
+                approximately = Finder.__find_approximately_phrase(language, substring, sentence)
+                pairs.append(NumberUnitFinderResult(number, unit, approximately, substring))
+                continue
 
             try:
                 matched_number = Finder.__get_value_from_group_match(part, "number")
@@ -216,6 +224,21 @@ class Finder:
             return match_object.group("a_" + group_name)
         else:
             return None
+
+    @staticmethod
+    def __convert_text_to_inches(text: str) -> int:
+        """Convert number written as feet and inches (6'12") to inches"""
+        feet = 0
+        feet_idx_end = None
+        inches = 0
+        for idx, l in enumerate(text):
+            if l == "'":
+                feet = int(text[:idx])
+                feet_idx_end = idx
+            elif l == '"':
+                inches = int(text[feet_idx_end + 1:idx])
+
+        return inches + 12 * feet
 
     @staticmethod
     def __find_approximately_phrase(language: Language, match: str, sentence: str) -> bool:
