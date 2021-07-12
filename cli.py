@@ -1,16 +1,13 @@
 # coding=utf-8
 import argparse
+import sys
 
-from fixer import Fixer, FixerConfigurator
-from fixer._statistics import StatisticsMarks
+from fixer import Fixer, FixerConfigurator, FixerStatisticsMarks
 from tabulate import tabulate
 
 parser = argparse.ArgumentParser()
-parser.add_argument("file", help="Name of file to be checked")
-parser.add_argument("config", help="Path to the configuration file")
-parser.add_argument("--limit", default=100000, type=int, help="Count of sentences to be checked")
-parser.add_argument("--offset", default=0, type=int, help="Offset of sentences to be checked")
-parser.add_argument("--texts", default=False, action='store_true')
+parser.add_argument("config", type=str, help="Path to the configuration file")
+parser.add_argument("--changes", default=False, action='store_true', help="Display only changed sentences")
 
 
 def main(args):
@@ -18,62 +15,31 @@ def main(args):
     configuration.load_from_file(args.config)
 
     fixer = Fixer(configuration)
-    statistics = {mark.value: 0 for mark in StatisticsMarks}
+    statistics = {mark.value: 0 for mark in FixerStatisticsMarks}
 
-    with open(args.file, "r", encoding="utf8") as input_file, open("output.txt", "w", encoding="utf8") as output_file:
-        for _ in range(args.offset):  # skipping the offset
-            next(input_file)
+    for line in sys.stdin:
+        line = line.strip()
 
-        last = None
-        for line in input_file:  # checking the limit
-            args.limit -= 1
-            if args.limit == 0:
-                break
+        if not line and not args.changes:
+            print()
+            continue
 
-            if line.isspace() and not args.texts:
-                continue
-            elif line.isspace():
-                output_file.write("\n")
-                continue
+        source_sentence, translated_sentence = line.split('\t')
+        repaired_sentence, has_changed, marks = fixer.fix(source_sentence, translated_sentence)
 
-            left, right = line.split('\t')
+        for mark in marks:
+            statistics[mark.value] += 1
 
-            if left == last and not args.texts:  # skipping same sentences
-                continue
+        if args.changes:
+            if has_changed:
+                print(source_sentence, translated_sentence, repaired_sentence, sep='\n', end='\n\n')
+            elif FixerStatisticsMarks.UNFIXABLE_PART in marks:
+                print(source_sentence, translated_sentence, "UNFIXABLE PROBLEM", sep='\n', end='\n\n')
 
-            last = left
+        else:
+            print(source_sentence, repaired_sentence, sep='\t')
 
-            left = left.strip()
-            right = right.strip()
-
-            repaired_sentence, marks = fixer.fix(left, right)
-
-            for mark in marks:
-                statistics[mark.value] += 1
-
-            #if all([mark not in marks for mark in [StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT, StatisticsMarks.WRONG_NUMBER_UNIT]]) : continue
-            #print(left, right, repaired_sentence, sep='\n', end='\n\n')
-
-            if args.texts:
-                if isinstance(repaired_sentence, str):  # reporting repairs
-                    output_file.write(left)
-                    output_file.write('\t')
-                    output_file.write(repaired_sentence)
-                    output_file.write('\n')
-                    print(left, repaired_sentence, sep='\t')
-                else:
-                    output_file.write(left)
-                    output_file.write('\t')
-                    output_file.write(right)
-                    output_file.write('\n')
-                    print(left, right, sep='\t')
-            else:
-                if isinstance(repaired_sentence, str):  # reporting repairs
-                    print(left, right, repaired_sentence, sep='\n', end='\n\n')
-                elif repaired_sentence is False:
-                    print(left, right, "Unfixable sentence", sep='\n', end='\n\n')
-
-    statistics_to_print = [(mark.name, statistics[mark.value]) for mark in StatisticsMarks]
+    statistics_to_print = [(mark.name, statistics[mark.value]) for mark in FixerStatisticsMarks]
     print(tabulate(statistics_to_print))
 
 

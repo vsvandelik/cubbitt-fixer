@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from ._languages import Language
 from ._sentence_pair import SentencePair
-from ._statistics import StatisticsMarks
+from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 from .fixer_configurator import FixerConfigurator
 
 

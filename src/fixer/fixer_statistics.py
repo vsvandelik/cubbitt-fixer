@@ -1,7 +1,7 @@
 from enum import Enum, auto
 
 
-class StatisticsMarks(Enum):
+class FixerStatisticsMarks(Enum):
     """Labels for statistics about fixer"""
 
     SINGLE_NUMBER_UNIT_SENTENCE = auto()

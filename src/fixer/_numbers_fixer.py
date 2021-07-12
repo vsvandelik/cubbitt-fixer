@@ -5,7 +5,7 @@ from fixer._words_to_numbers_converter import WordsNumbersConverter
 from ._finder import Finder, NumberUnitFinderResult
 from ._replacer import Replacer
 from ._sentence_pair import SentencePair
-from ._statistics import StatisticsMarks
+from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 from ._units import units
 from .fixer_configurator import FixerConfigurator, FixerModes
 
