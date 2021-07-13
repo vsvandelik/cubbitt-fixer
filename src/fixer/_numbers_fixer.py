@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import List, Tuple, Dict, Set
 
 from fixer._words_to_numbers_converter import WordsNumbersConverter
@@ -299,13 +300,15 @@ class NumberFixer(FixerToolInterface):
         It process all Relationships instances and for each level it verifies
         whenever there is only one possible match. If so, the match instance is created.
 
-        If not, the possible matches are created based on order (except for the last level).
+        If the level is indicating same things (same numbers or same numbers with units),
+        matches are created randomly
 
         :param relationships: List of possible matches - for each target part there is a instance
         :param level: level to be processed now
-        :return:
+        :return: List of matches (first is target sentence part, second is source sentence part)
         """
         results = []
+        uses_of_source_parts = Counter([i for r in relationships.values() for i in r.get_list_by_level(level)])
 
         while len(relationships):
             some_change = False
@@ -314,6 +317,9 @@ class NumberFixer(FixerToolInterface):
             for trg_idx, target_sentence in relationships.items():
                 if len(target_sentence.get_list_by_level(level)) == 1:
                     idx = target_sentence.get_list_by_level(level).pop()
+                    if uses_of_source_parts[idx] > 1:  # create match only when source part is used only once
+                        target_sentence.get_list_by_level(level).add(idx)
+                        continue
                     to_remove.append(trg_idx)
                     results.append((trg_idx, idx))
                     some_change = True
@@ -324,8 +330,8 @@ class NumberFixer(FixerToolInterface):
             if not some_change:
                 break
 
-        if len(relationships) and level in [1, 5]:
-            return results  # skip random matching the ones on the generic levels
+        if not len(relationships) or level not in [0, 2]:  # do random matching only when the data are the same
+            return results
 
         to_remove = []
         for trg_idx, target_sentence in relationships.items():

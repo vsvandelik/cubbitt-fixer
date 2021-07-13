@@ -33,8 +33,6 @@ def main(args):
         if args.changes:
             if has_changed:
                 print(source_sentence, translated_sentence, repaired_sentence, sep='\n', end='\n\n')
-            elif FixerStatisticsMarks.UNFIXABLE_PART in marks:
-                print(source_sentence, translated_sentence, "UNFIXABLE PROBLEM", sep='\n', end='\n\n')
 
         else:
             print(source_sentence, repaired_sentence, sep='\t')
