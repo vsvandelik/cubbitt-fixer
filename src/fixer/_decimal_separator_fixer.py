@@ -54,10 +54,10 @@ class DecimalSeparatorFixer(FixerToolInterface):
                     hours, minutes = number.split('.')
                     if int(hours) <= 12 and int(minutes) < 60:
                         translated_sentence = translated_sentence.replace(number, number.replace('.', ":"))
-                        marks += [StatisticsMarks.DECIMAL_POINT_AS_TIME]
+                        marks += [StatisticsMarks.S_DECIMAL_POINT_AS_TIME]
                 else:
                     translated_sentence = translated_sentence.replace(number, DecimalSeparatorFixer.swap_separators(number))
-                    marks += [StatisticsMarks.DECIMAL_SEPARATOR_PROBLEM]
+                    marks += [StatisticsMarks.S_SWAPPED_SEPARATORS]
                 replaced += 1
 
         return translated_sentence, marks

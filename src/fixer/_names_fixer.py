@@ -47,14 +47,11 @@ class NamesFixer(FixerToolInterface):
         # Replace if there is only one name
         if len(src_names_only) == 1 and len(trg_names_only) == 1:
             single_name_result, has_changed = self.__single_name_in_sentence(sentence_pair, sentence_pair.target_text, src_names_only[0], trg_names_only[0])
-            return single_name_result, has_changed, [StatisticsMarks.SINGLE_NAME_SENTENCE] + [StatisticsMarks.NAMES_CORRECT] if not has_changed else []
+            return single_name_result, [StatisticsMarks.N_SINGLE_NAME_SENTENCE] + [StatisticsMarks.N_NAME_CORRECT] if not has_changed else [StatisticsMarks.N_NAME_CHANGED]
 
         result_sentence, marks = self.__match_names(sentence_pair)
 
-        if result_sentence is None:
-            return sentence_pair.target_text, marks
-        else:
-            return result_sentence, marks if result_sentence != sentence_pair.target_text else [StatisticsMarks.NAMES_CORRECT]
+        return sentence_pair.target_text if not result_sentence else result_sentence, marks
 
     def __single_name_in_sentence(self, sentence_pair: SentencePair, target_text: str, source_name: List[str], target_name: List[str]) -> Tuple[str, bool]:
         """"Replace name in translated sentence for the name in source sentence.
@@ -110,7 +107,7 @@ class NamesFixer(FixerToolInterface):
                         possible_target_names_idxs.append(idx)
 
             if not possible_target_names_idxs:
-                return None, [StatisticsMarks.NAMES_PROBLEM_UNFIXABLE]
+                return None, [StatisticsMarks.N_NAMES_PROBLEM_UNFIXABLE]
 
             selected_target_name = mode(possible_target_names_idxs)  # select name with the most matched words
             matches.append((source_name, sentence_pair.target_names[selected_target_name]))
@@ -125,12 +122,15 @@ class NamesFixer(FixerToolInterface):
                         matches_to_remove.append(match_id)
 
         if len(matches_to_remove) == len(matches):
-            return None, [StatisticsMarks.NAMES_PROBLEM_UNFIXABLE]
+            return None, [StatisticsMarks.N_NAMES_PROBLEM_UNFIXABLE]
+
+        marks = []
 
         translated_sentence = sentence_pair.target_text
         for match_id, match in enumerate(matches):
             if match_id in matches_to_remove:
                 continue
-            translated_sentence = self.__single_name_in_sentence(sentence_pair, translated_sentence, match[0], match[1])
+            translated_sentence, has_changed = self.__single_name_in_sentence(sentence_pair, translated_sentence, match[0], match[1])
+            marks.append(StatisticsMarks.N_NAME_CORRECT if not has_changed else StatisticsMarks.N_NAME_CHANGED)
 
-        return translated_sentence, [StatisticsMarks.MULTIPLE_NAMES_SENTENCE]
+        return translated_sentence, [StatisticsMarks.N_MULTIPLE_NAMES_SENTENCE] + marks

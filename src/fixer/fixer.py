@@ -53,7 +53,6 @@ class Fixer:
 
         sentence_pair = SentencePair(original_text, translated_text, self.configuration)
 
-        status = True
         final_marks = []
 
         for tool in self.fixers:
@@ -62,7 +61,6 @@ class Fixer:
                 final_marks += marks
             except Exception as error:
                 logging.error("Error when fixing sentence:\n%s\t%s\nException: %s", original_text, translated_text, error)
-                # raise error
-                return sentence_pair.target_text, sentence_pair.target_text_has_changed, [StatisticsMarks.EXCEPTION_CATCH]
+                return sentence_pair.target_text, sentence_pair.target_text_has_changed, [StatisticsMarks.G_EXCEPTION_CATCH]
 
         return sentence_pair.target_text, sentence_pair.target_text_has_changed, final_marks

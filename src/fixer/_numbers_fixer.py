@@ -88,26 +88,26 @@ class NumberFixer(FixerToolInterface):
         if WordsNumbersConverter.contains_text_numbers(sentence_pair.source_text, self.source_lang) or len(src_lang_numbers_units) != len(trg_lang_numbers_units):
             number_as_word_src = Finder.find_word_number_unit(sentence_pair.source_text, self.source_lang, sentence_pair.source_lemmas)
             if number_as_word_src:
-                marks += [StatisticsMarks.NUMBER_AS_WORD]
+                marks += [StatisticsMarks.U_NUMBER_AS_WORD] * len(number_as_word_src)
                 src_lang_numbers_units += number_as_word_src
 
         if WordsNumbersConverter.contains_text_numbers(sentence_pair.target_text, self.target_lang) or len(src_lang_numbers_units) != len(trg_lang_numbers_units):
             number_as_word_trg = Finder.find_word_number_unit(sentence_pair.target_text, self.target_lang, sentence_pair.target_lemmas)
             if number_as_word_trg:
-                marks += [StatisticsMarks.NUMBER_AS_WORD]
+                marks += [StatisticsMarks.U_NUMBER_AS_WORD] * len(number_as_word_trg)
                 trg_lang_numbers_units += number_as_word_trg
 
         if len(src_lang_numbers_units) == 0 and len(trg_lang_numbers_units) == 0:
             return sentence_pair.target_text, []
 
         elif len(src_lang_numbers_units) != len(trg_lang_numbers_units):
-            marks += [StatisticsMarks.DIFFERENT_COUNT_NUMBERS_UNITS]
+            marks += [StatisticsMarks.U_DIFFERENT_COUNT_NUMBERS_UNITS]
 
         elif len(src_lang_numbers_units) == 1 and len(trg_lang_numbers_units) == 1:
-            marks.append(StatisticsMarks.SINGLE_NUMBER_UNIT_SENTENCE)
+            marks.append(StatisticsMarks.U_SINGLE_NUMBER_UNIT_SENTENCE)
 
         else:
-            marks.append(StatisticsMarks.MULTIPLE_NUMBER_UNIT_SENTENCE)
+            marks.append(StatisticsMarks.U_MULTIPLE_NUMBER_UNIT_SENTENCE)
 
         relationships = self.__prepare_src_trg_pairs_relationships(src_lang_numbers_units, trg_lang_numbers_units)
 
@@ -132,63 +132,67 @@ class NumberFixer(FixerToolInterface):
 
     def __process_only_numbers_same(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str):
         """Process matches of same numbers"""
-        return sentence, len(bindings) * [StatisticsMarks.ONLY_NUMBER_SAME]
+        return sentence, len(bindings) * [StatisticsMarks.U_ONLY_NUMBER_SAME]
 
     def __process_only_numbers_different(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
         """Process matches of different numbers without units. Numbers are replaced."""
-        if not len(bindings):
-            return sentence, []
+        marks = len(bindings) * [StatisticsMarks.U_ONLY_NUMBER_DIFFERENT]
 
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
 
             sentence = Replacer.replace_number(sentence, src_pair, trg_pair, self.target_lang, trg_pair.text_part)
+            marks.append(StatisticsMarks.U_FIXED)
 
-        return sentence, len(bindings) * [StatisticsMarks.ONLY_NUMBER_DIFFERENT]
+        return sentence, marks
 
     def __process_sentence_same_number_same_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
         """Process matches of numbers with units (both same). When mode is recalculating, conversion is provided."""
-        if self.configuration.mode == FixerModes.FIXING or not len(bindings):
-            return sentence, [StatisticsMarks.CORRECT_NUMBER_UNIT] if len(bindings) else []
+        marks = [StatisticsMarks.U_CORRECT_NUMBER_UNIT] * len(bindings)
 
-        marks = [StatisticsMarks.RECALCULATED]
+        if self.configuration.mode == FixerModes.FIXING:
+            return sentence, marks
 
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
             if trg_pair.modifier:
-                marks += [StatisticsMarks.NUMBERS_MODIFIERS]
+                marks.append(StatisticsMarks.U_NUMBERS_MODIFIERS)
             if trg_pair.unit.category.system in self.configuration.target_units:
                 continue
             converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
             if not converted_unit or not converted_unit:
-                return sentence, [StatisticsMarks.UNABLE_TO_RECALCULATE]
+                marks.append(StatisticsMarks.U_UNABLE_TO_RECALCULATE)
+                continue
+            else:
+                marks.append(StatisticsMarks.U_RECALCULATED)
             sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, converted_number, converted_unit, self.target_lang)
 
         return sentence, marks
 
     def __process_sentence_same_number_different_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
         """Process matches of numbers with different units. Unit is replaced. When mode is recalculating, conversion is provided."""
-        if not len(bindings):
-            return sentence, []
-
-        marks = [StatisticsMarks.CORRECT_NUMBER_WRONG_UNIT]
+        marks = [StatisticsMarks.U_CORRECT_NUMBER_WRONG_UNIT] * len(bindings)
 
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
 
             if trg_pair.modifier:
-                marks += [StatisticsMarks.NUMBERS_MODIFIERS]
+                marks.append(StatisticsMarks.U_NUMBERS_MODIFIERS)
 
             if self.configuration.mode == FixerModes.FIXING:
                 suitable_unit = units.get_correct_unit(self.target_lang, src_pair.number, src_pair.unit)
                 sentence = Replacer.replace_unit(sentence, src_pair, trg_pair, suitable_unit, self.target_lang)
+                marks.append(StatisticsMarks.U_FIXED)
             else:
                 converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
                 if converted_unit and converted_unit:
                     sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, converted_number, converted_unit, self.target_lang)
+                    marks.append(StatisticsMarks.U_RECALCULATED)
+                else:
+                    marks.append(StatisticsMarks.U_UNABLE_TO_RECALCULATE)
 
         return sentence, marks
 
@@ -197,25 +201,26 @@ class NumberFixer(FixerToolInterface):
 
         It checks whenever the only difference between numbers is not a separators.
         """
-        change = False
-        marks = []
+        marks = [StatisticsMarks.U_WRONG_NUMBER_CORRECT_UNIT] * len(bindings)
 
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
 
             if trg_pair.modifier:
-                marks += [StatisticsMarks.NUMBERS_MODIFIERS]
+                marks.append(StatisticsMarks.U_NUMBERS_MODIFIERS)
 
             if self.configuration.mode == FixerModes.RECALCULATING:
                 converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
                 if converted_unit and converted_unit:
                     sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, converted_number, converted_unit, self.target_lang)
-                    change = True
+                    marks.append(StatisticsMarks.U_RECALCULATED)
+                else:
+                    marks.append(StatisticsMarks.U_UNABLE_TO_RECALCULATE)
             else:
 
                 if self.__consider_tolerance_rates(src_pair, trg_pair):
-                    marks += [StatisticsMarks.APPLIED_TOLERANCE_RATE]
+                    marks.append(StatisticsMarks.U_APPLIED_TOLERANCE_RATE)
                     continue
 
                 src_number = str(src_pair.number) if src_pair.number_as_string else src_pair.text_part.replace(src_pair.unit.word, '').strip(" -.,")
@@ -228,34 +233,38 @@ class NumberFixer(FixerToolInterface):
                 trg_number = trg_pair.number_as_string.strip() if trg_pair.number_as_string else trg_pair.text_part.replace(trg_pair.unit.word, '').strip(" -.,")
 
                 sentence = Replacer.replace_number(sentence, src_pair, trg_pair, self.target_lang, trg_number)
-                change = True
+                marks.append(StatisticsMarks.U_FIXED)
 
-        return sentence, ([StatisticsMarks.WRONG_NUMBER_CORRECT_UNIT] + marks if len(bindings) and change else [])
+        return sentence, marks
 
     def __process_sentence_different_number_different_unit(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
         """Process matches of numbers with units (both different). Both is replaced. When mode is recalculating, conversion is provided."""
-        marks = []
+        marks = [StatisticsMarks.U_WRONG_NUMBER_UNIT] * len(bindings)
 
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
 
             if trg_pair.modifier:
-                marks += [StatisticsMarks.NUMBERS_MODIFIERS]
+                marks.append(StatisticsMarks.U_NUMBERS_MODIFIERS)
 
             if self.configuration.mode == FixerModes.RECALCULATING:
                 converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, src_pair.unit, trg_pair.unit)
                 if converted_unit and converted_unit:
                     sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, converted_number, converted_unit, self.target_lang)
+                    marks.append(StatisticsMarks.U_RECALCULATED)
+                else:
+                    marks.append(StatisticsMarks.U_UNABLE_TO_RECALCULATE)
             else:
                 if self.__consider_tolerance_rates(src_pair, trg_pair):
-                    marks += [StatisticsMarks.APPLIED_TOLERANCE_RATE]
+                    marks.append(StatisticsMarks.U_APPLIED_TOLERANCE_RATE)
                     continue
 
                 suitable_unit = units.get_correct_unit(self.target_lang, src_pair.number, src_pair.unit)
                 sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, src_pair.number, suitable_unit, self.target_lang)
+                marks.append(StatisticsMarks.U_FIXED)
 
-        return sentence, ([StatisticsMarks.WRONG_NUMBER_UNIT] + marks if len(bindings) else [])
+        return sentence, marks
 
     def __consider_tolerance_rates(self, src_pair, trg_pair) -> bool:
         """It checks if the number from translated sentence is similar to number from source sentence
