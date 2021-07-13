@@ -8,6 +8,7 @@ from tabulate import tabulate
 parser = argparse.ArgumentParser()
 parser.add_argument("config", type=str, help="Path to the configuration file")
 parser.add_argument("--changes", default=False, action='store_true', help="Display only changed sentences")
+parser.add_argument("--flags", default=False, action='store_true', help="Display ids of the statistics marks. Used only when flag changes is present.")
 
 
 def main(args):
@@ -32,13 +33,21 @@ def main(args):
 
         if args.changes:
             if has_changed:
-                print(source_sentence, translated_sentence, repaired_sentence, sep='\n', end='\n\n')
+                print(";" + ";".join([str(mark.value) for mark in marks]) + ";" if args.flags else "",
+                      source_sentence,
+                      translated_sentence,
+                      repaired_sentence,
+                      sep='\n', end='\n\n')
 
         else:
             print(source_sentence, repaired_sentence, sep='\t')
 
-    statistics_to_print = [(mark.name, statistics[mark.value]) for mark in FixerStatisticsMarks]
-    print(tabulate(statistics_to_print))
+    if args.flags:
+        statistics_to_print = [(mark.value, mark.name, statistics[mark.value]) for mark in FixerStatisticsMarks]
+        print(tabulate(statistics_to_print, headers=("ID", "Label", "#")))
+    else:
+        statistics_to_print = [(mark.name, statistics[mark.value]) for mark in FixerStatisticsMarks]
+        print(tabulate(statistics_to_print, headers=("Label", "#")))
 
 
 if __name__ == "__main__":
