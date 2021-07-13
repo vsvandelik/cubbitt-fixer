@@ -2,7 +2,7 @@ import re
 from typing import List, Tuple
 
 from ._fixer_tool import FixerToolInterface
-from ._languages import Language
+from ._languages import Language, Languages
 from ._sentence_pair import SentencePair
 from .fixer_configurator import FixerConfigurator
 from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
@@ -56,7 +56,7 @@ class DecimalSeparatorFixer(FixerToolInterface):
                         translated_sentence = translated_sentence.replace(number, number.replace('.', ":"))
                         marks += [StatisticsMarks.S_DECIMAL_POINT_AS_TIME]
                 else:
-                    translated_sentence = translated_sentence.replace(number, DecimalSeparatorFixer.swap_separators(number))
+                    translated_sentence = translated_sentence.replace(number, DecimalSeparatorFixer.__change_separators(number, self.target_lang))
                     marks += [StatisticsMarks.S_SWAPPED_SEPARATORS]
                 replaced += 1
 
@@ -86,8 +86,12 @@ class DecimalSeparatorFixer(FixerToolInterface):
                           )
 
     @staticmethod
-    def swap_separators(number: str) -> str:
-        """Swap comma and dot"""
-        number = number.replace(',', '<>')
-        number = number.replace('.', ',')
-        return number.replace('<>', '.')
+    def __change_separators(number: str, language: Language) -> str:
+        """Swap separators in number. For Czech space is used for thousands"""
+
+        if language == Languages.CS:
+            return number.replace(',', ' ').replace('.', ',')
+        elif language == Languages.EN:
+            return number.replace('.', '<>').replace(',', '.').replace('<>', ',')
+        else:
+            return number
