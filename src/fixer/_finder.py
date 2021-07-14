@@ -160,6 +160,7 @@ class Finder:
             return []
 
         values = Finder.__filter_and_match_tokens_next_to_each_other_together(language, sentence_analysis)
+        values = Finder.__split_siblings_numbers(values, language)
         found_number_units = []
 
         for phrase in values:
@@ -300,3 +301,40 @@ class Finder:
         trim_and_add_to_values(current_phrase)
 
         return values
+
+    @staticmethod
+    def __split_siblings_numbers(phrases: List[List[dict]], language: Language) -> List[List[dict]]:
+        """Split numbers next to each other written without delimiter (eg. pět šest metrů)
+
+        It supports also format with and delimiter (eg. five and six)
+
+        :param phrases: List of found phrases
+        :param language: Language of the sentence
+        :return: Changed list of found phrases
+        """
+        to_remove = []
+        to_add = []
+
+        for idx, phrase in enumerate(phrases):
+            if not (len(phrase) == 2 or (len(phrase) == 3 and phrase[1]['word'] in ['a', 'and'])):
+                continue
+
+            first = phrase[0]['lemma']
+            last = phrase[-1]['lemma']
+
+            words = WordsNumbersConverter.CS if language == Languages.CS else WordsNumbersConverter.EN
+            first_num = words.get(first)
+            last_num = words.get(last)
+
+            if not first_num or not last_num:
+                continue
+
+            if 0 < first_num < last_num < 10 or 10 <= first_num < last_num < 100:
+                to_remove.append(idx)
+                to_add.append([phrase[0]])
+                to_add.append([phrase[-1]])
+
+        for removing in to_remove:
+            phrases.pop(removing)
+
+        return phrases + to_add

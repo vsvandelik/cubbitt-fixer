@@ -22,7 +22,7 @@ class WordsNumbersConverter:
     """
 
     #: Text numbers table for czech language
-    __CS = {
+    CS = {
         'nula': 0,
         'jedna': 1,
         'jeden': 1,
@@ -56,7 +56,7 @@ class WordsNumbersConverter:
     }
 
     #: Text numbers table for english language
-    __EN = {
+    EN = {
         'zero': 0,
         'null': 0,
         # 'one': 1,
@@ -89,10 +89,10 @@ class WordsNumbersConverter:
     }
 
     #: Regular expression pattern to search any number in string (czech)
-    __CS_words_regex = re.compile(r"\b(" + "|".join(__CS.keys()) + r")\b", re.IGNORECASE)
+    __CS_words_regex = re.compile(r"\b(" + "|".join(CS.keys()) + r")\b", re.IGNORECASE)
 
     #: Regular expression pattern to search any number in string (english)
-    __EN_words_regex = re.compile(r"\b(" + "|".join(__EN.keys()) + r")\b", re.IGNORECASE)
+    __EN_words_regex = re.compile(r"\b(" + "|".join(EN.keys()) + r")\b", re.IGNORECASE)
 
     @staticmethod
     def contains_text_numbers(sentence: str, language: Language) -> bool:
@@ -149,8 +149,8 @@ class WordsNumbersConverter:
                 last_number += WordsNumbersConverter.__czech_shortcuts(word)
                 previous_was_scaling = False
 
-            elif word in WordsNumbersConverter.__CS.keys():
-                last_number += WordsNumbersConverter.__CS[word]
+            elif word in WordsNumbersConverter.CS.keys():
+                last_number += WordsNumbersConverter.CS[word]
                 previous_was_scaling = False
 
             elif word in Languages.CS.big_numbers_scale.keys():
@@ -186,7 +186,7 @@ class WordsNumbersConverter:
         if not parts:
             return False
 
-        return WordsNumbersConverter.__CS[parts.group(2)] + WordsNumbersConverter.__CS[parts.group(1) if parts.group(1) != "jedn" else "jedna"]
+        return WordsNumbersConverter.CS[parts.group(2)] + WordsNumbersConverter.CS[parts.group(1) if parts.group(1) != "jedn" else "jedna"]
 
     @staticmethod
     def __en_converter(phrase: List[str]) -> Number:
