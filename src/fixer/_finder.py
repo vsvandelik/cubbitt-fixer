@@ -61,9 +61,11 @@ def prepare_find_numbers_pattern_one_language(language: Language) -> re.Pattern:
     units_all = units.get_regex_units_for_language(language)
 
     return re.compile(r"(?:(?P<inches>(\d+\'\d+\")|(\d+-(?:foot|feet)-\d+))"
-                      r"|(?P<skipping>(\d{1,2}\.\s?\d{1,2}\.\s?\d{4}?)|(\d+[-:]\d+))"
+                      r"|(?P<skipping>(\d{1,2}\.\s?\d{1,2}\.\s?\d{4}?)|(\d+[-:]\d+)|(\d+\s+[aApP]\.?[mM]))"
                       rf"|(?P<unit>{units_before})\s?(?P<number>\d+(?:[ {sep_thousands}]\d{{3}})*(?:{sep_decimals}\d+)?)[\s-]?(?:(?P<scaling>{scales}|m)\b)?"
-                      rf"|(?P<a_number>\d+(?:[ {sep_thousands}]\d{{3}})*({sep_decimals}\d+)?)[\s-]?(?:(?P<a_scaling>{scales}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{units_all})?(?:\b|\s|$|[,.\s]))",
+                      rf"|(?P<a_number>\d+(?:[ {sep_thousands}]\d{{3}})*({sep_decimals}\d+)?)[\s-]?(?:(?P<a_scaling>{scales}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{units_all})?"
+                      # "(?:\b|\s|$|[,.\s])"
+                      ")",
                       re.IGNORECASE)
 
 
@@ -131,7 +133,7 @@ class Finder:
             if unit and '-' + unit.word in whole_match:
                 pairs[-1].modifier = True
 
-            if scale_key and scale_key == "m":
+            if scale_key and scale_key.lower() == "m":
                 pairs[-1].add_scaling(1000000)
             elif scale_key:
                 pairs[-1].add_scaling(language.big_numbers_scale[scale_key.lower()][0])
@@ -207,9 +209,7 @@ class Finder:
 
             try:
                 number = WordsNumbersConverter.convert([data['lemma'] for data in phrase if data['upostag'] != 'PUNCT'], language)
-            except WordsNumbersConverterException:
-                continue
-            except ValueError:
+            except (WordsNumbersConverterException, ValueError, IndexError):
                 continue
 
             found_number_units.append(NumberUnitFinderResult(number, matched_unit, approximately, whole_match))

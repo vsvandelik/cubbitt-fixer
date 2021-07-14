@@ -102,7 +102,7 @@ class Replacer:
             replacement = new_unit.word + (" " if len(new_unit.word) > 1 else "") + str(new_number)
 
         elif target_number_unit.modifier:
-            singular_unit = units.get_correct_unit(Languages.EN, 1, target_number_unit.unit, new_unit, modifier=True)
+            singular_unit = units.get_correct_unit(Languages.EN, 1, source_number_unit.unit, strict_category=new_unit.category, modifier=True)
             replacement = str(new_number) + "-" + singular_unit.word
 
         else:
