@@ -2,11 +2,11 @@ import setuptools
 
 setuptools.setup(
     name="cubbitt-fix-vsvandelik",
-    version="0.0.5",
+    version="0.1.1",
     author="Vojtech Svandelik",
     author_email="vojtech.svandelik@gmail.com",
-    description="CUBBITT fixer for numbers and units problems.",
-    url="https://github.com/vsvandelik/lindat-translation-postprocessor",
+    description="CUBBITT fixer for numbers, units and possible names problems.",
+    url="https://github.com/vsvandelik/cubbitt-fixer",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
