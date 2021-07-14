@@ -109,5 +109,5 @@ class NameTagApi(NameRecognitionInterface):
 def get_names_tagger_list():
     return {
         'nametag': NameTagApi,
-        'capitalizeLetters': CapitalLettersBasedNameRecognition
+        'capitalize_letters': CapitalLettersBasedNameRecognition
     }

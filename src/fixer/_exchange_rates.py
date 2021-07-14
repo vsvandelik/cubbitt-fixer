@@ -36,9 +36,13 @@ class CNBExchangeRates(ExchangeRatesInterface):
         self.rates = CNBExchangeRates.load_rates()
 
         if predefined_rates:
-            for abbr, rate in predefined_rates.items():
-                if abbr in self.rates:
-                    self.rates[abbr] = rate
+            self.load_static_rates(predefined_rates)
+
+    def load_static_rates(self, predefined_rates: Dict[str, float]):
+        """Override rates loaded from CNB for hard-coded rates given by configuration"""
+        for abbr, rate in predefined_rates.items():
+            if abbr in self.rates:
+                self.rates[abbr] = rate
 
     @staticmethod
     def load_rates():
@@ -105,7 +109,7 @@ exchange_rates_convertor = CNBExchangeRates()
 
 def get_exchange_rates_convertors_list():
     return {
-        'cnb': CNBExchangeRates
+        'cnb': exchange_rates_convertor
     }
 
 

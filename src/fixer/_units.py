@@ -325,7 +325,7 @@ class UnitsWrapper:
         self.__units_by_language_category = None
         self.__single_symbol = []
 
-    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, *, strict_category=None, modifier=False, abbreviation=None) -> Unit:
+    def get_correct_unit(self, language: Language, number: Union[float, int], original_unit: Unit, *, strict_category=None, modifier=False, abbreviation=None) -> Optional[Unit]:
         """Find best unit form to use for given number.
 
         All units are marked with score for different criteria (whenever it
@@ -342,10 +342,11 @@ class UnitsWrapper:
         strict_category = original_unit.category if not strict_category else strict_category
 
         options_list = []
-        for unit in self.__units:
-            if unit.language != language or unit.category != strict_category:
-                continue
 
+        if strict_category not in self.get_list_units_by_category_language()[language]:
+            return None
+
+        for unit in self.get_list_units_by_category_language()[language][strict_category]:
             score = 0
 
             if modifier and '-' in unit.word:
@@ -825,9 +826,9 @@ units.add_unit(Unit('koruny', UnitCategories.CZK, Languages.CS, numbers_validity
 units.add_unit(Unit('korun', UnitCategories.CZK, Languages.CS, numbers_validity_more_than_5, False, None))
 
 units.add_unit(Unit('CZK', UnitCategories.CZK, Languages.EN, None, True, None, True))
+units.add_unit(Unit('crowns', UnitCategories.CZK, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('Czech crowns', UnitCategories.CZK, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('kroners', UnitCategories.CZK, Languages.EN, [], False, None))
-units.add_unit(Unit('crowns', UnitCategories.CZK, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('kroner', UnitCategories.CZK, Languages.EN, [], False, None))
 
 units.add_unit(Unit('$', UnitCategories.USD, Languages.CS, None, True, None, True))

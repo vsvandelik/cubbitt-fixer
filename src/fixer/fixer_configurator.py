@@ -142,10 +142,10 @@ class FixerConfigurator:
         convertor = None
 
         if isinstance(config[config_option], str) and config[config_option] in get_exchange_rates_convertors_list().keys():
-            convertor = get_exchange_rates_convertors_list()[config[config_option]]()
+            convertor = get_exchange_rates_convertors_list()[config[config_option]]
         elif isinstance(config[config_option], dict):
             default_convertor = get_default_exchange_rates_convertor()
-            convertor = get_exchange_rates_convertors_list()[default_convertor](config[config_option])
+            convertor = get_exchange_rates_convertors_list()[default_convertor].load_static_rates(config[config_option])
 
         return convertor
 
