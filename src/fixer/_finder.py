@@ -60,7 +60,11 @@ def prepare_find_numbers_pattern_one_language(language: Language) -> re.Pattern:
     scales = language.big_numbers_scale_keys
     units_all = units.get_regex_units_for_language(language)
 
-    return re.compile(rf"(?:(?P<inches>(\d+\'\d+\")|(\d+-(?:foot|feet)-\d+))|(?P<unit>{units_before})\s?(?P<number>\d+(?:[ {sep_thousands}]\d{{3}})*(?:{sep_decimals}\d+)?)[\s-]?(?:(?P<scaling>{scales}|m)\b)?|(?P<a_number>\d+(?:[ {sep_thousands}]\d{{3}})*({sep_decimals}\d+)?)[\s-]?(?:(?P<a_scaling>{scales}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{units_all})?(?:\b|\s|$|[,.\s]))", re.IGNORECASE)
+    return re.compile(r"(?:(?P<inches>(\d+\'\d+\")|(\d+-(?:foot|feet)-\d+))"
+                      r"|(?P<skipping>(\d{1,2}\.\s?\d{1,2}\.\s?\d{4}?)|(\d+[-:]\d+))"
+                      rf"|(?P<unit>{units_before})\s?(?P<number>\d+(?:[ {sep_thousands}]\d{{3}})*(?:{sep_decimals}\d+)?)[\s-]?(?:(?P<scaling>{scales}|m)\b)?"
+                      rf"|(?P<a_number>\d+(?:[ {sep_thousands}]\d{{3}})*({sep_decimals}\d+)?)[\s-]?(?:(?P<a_scaling>{scales}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{units_all})?(?:\b|\s|$|[,.\s]))",
+                      re.IGNORECASE)
 
 
 class Finder:
@@ -89,6 +93,9 @@ class Finder:
         pairs = []
         for part in re.finditer(Finder.__FIND_NUMBERS_PATTERN[language], sentence):
             whole_match = part.group(0).strip(" .,-")
+
+            if part.group("skipping"):
+                continue
 
             if part.group("inches") and language == Languages.EN:  # Special behaviour for eg. 6'12"
                 substring = part.group("inches")
