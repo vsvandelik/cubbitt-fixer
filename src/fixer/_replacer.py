@@ -44,7 +44,7 @@ class Replacer:
             new_number_unit_part = f"{new_unit.word} {translated_number}"
 
         elif target_number_unit.modifier and new_unit.language == Languages.EN:  # eg. 250-metre
-            singular_unit = units.get_correct_unit(Languages.EN, 1, target_number_unit, new_unit, modifier=True)
+            singular_unit = units.get_correct_unit(Languages.EN, 1, source_number_unit.unit, strict_category=new_unit.category, modifier=True)
             new_number_unit_part = f"{translated_number}-{singular_unit.word}"
 
         elif not new_unit.word[0].isalpha():  # 250,-kč
