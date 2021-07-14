@@ -4,14 +4,14 @@ from enum import Enum, auto
 class FixerStatisticsMarks(Enum):
     """Labels for statistics about fixer"""
 
-    U_SINGLE_NUMBER_UNIT_SENTENCE = auto()  #: :meta hide-value:
-    U_MULTIPLE_NUMBER_UNIT_SENTENCE = auto()  #: :meta hide-value:
+    U_SINGLE_NUMBER_SENTENCE = auto()  #: :meta hide-value:
+    U_MULTIPLE_NUMBER_SENTENCE = auto()  #: :meta hide-value:
     U_CORRECT_NUMBER_UNIT = auto()  #: :meta hide-value:
     U_CORRECT_NUMBER_WRONG_UNIT = auto()  #: :meta hide-value:
     U_WRONG_NUMBER_CORRECT_UNIT = auto()  #: :meta hide-value:
     U_WRONG_NUMBER_UNIT = auto()  #: :meta hide-value:
     U_APPLIED_TOLERANCE_RATE = auto()  #: :meta hide-value:
-    U_DIFFERENT_COUNT_NUMBERS_UNITS = auto()  #: :meta hide-value:
+    U_DIFFERENT_COUNT_NUMBERS = auto()  #: :meta hide-value:
     U_NUMBER_AS_WORD = auto()  #: :meta hide-value:
     U_UNABLE_TO_RECALCULATE = auto()  #: :meta hide-value:
     U_RECALCULATED = auto()  #: :meta hide-value:

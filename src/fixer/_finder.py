@@ -61,10 +61,10 @@ def prepare_find_numbers_pattern_one_language(language: Language) -> re.Pattern:
     units_all = units.get_regex_units_for_language(language)
 
     return re.compile(r"(?:(?P<inches>(\d+\'\d+\")|(\d+-(?:foot|feet)-\d+))"
-                      r"|(?P<skipping>(\d{1,2}\.\s?\d{1,2}\.\s?\d{4}?)|(\d+[-:]\d+)|(\d+\s+[aApP]\.?[mM]))"
+                      r"|(?P<skipping>(\d{1,2}\.\s?\d{1,2}\.\s?\d{4}?)|(\d+[-:]\d+)|(\d+\s+[aApP]\.?[mM])|\d+\.\s[a-zA-Z])"
                       rf"|(?P<unit>{units_before})\s?(?P<number>\d+(?:[ {sep_thousands}]\d{{3}})*(?:{sep_decimals}\d+)?)[\s-]?(?:(?P<scaling>{scales}|m)\b)?"
-                      rf"|(?P<a_number>\d+(?:[ {sep_thousands}]\d{{3}})*({sep_decimals}\d+)?)[\s-]?(?:(?P<a_scaling>{scales}|m)(?:\b[\s-]?|[\s-]))?(?P<a_unit>{units_all})?"
-                      # "(?:\b|\s|$|[,.\s])"
+                      rf"|(?P<a_number>\d+(?:[ {sep_thousands}]\d{{3}})*({sep_decimals}\d+)?)[\s-]?(?:(?P<a_scaling>{scales}|m)(?:\b[\s-]?|[\s-]))?"
+                      rf"(?P<a_unit>{units_all})?(?:\b|\s|$|[,.\s])"
                       ")",
                       re.IGNORECASE)
 

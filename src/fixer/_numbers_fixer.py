@@ -102,13 +102,13 @@ class NumberFixer(FixerToolInterface):
             return sentence_pair.target_text, []
 
         elif len(src_lang_numbers_units) != len(trg_lang_numbers_units):
-            marks += [StatisticsMarks.U_DIFFERENT_COUNT_NUMBERS_UNITS]
+            marks += [StatisticsMarks.U_DIFFERENT_COUNT_NUMBERS]
 
         elif len(src_lang_numbers_units) == 1 and len(trg_lang_numbers_units) == 1:
-            marks.append(StatisticsMarks.U_SINGLE_NUMBER_UNIT_SENTENCE)
+            marks.append(StatisticsMarks.U_SINGLE_NUMBER_SENTENCE)
 
         else:
-            marks.append(StatisticsMarks.U_MULTIPLE_NUMBER_UNIT_SENTENCE)
+            marks.append(StatisticsMarks.U_MULTIPLE_NUMBER_SENTENCE)
 
         relationships = self.__prepare_src_trg_pairs_relationships(src_lang_numbers_units, trg_lang_numbers_units)
 
