@@ -361,7 +361,7 @@ class UnitsWrapper:
             elif abbreviation is True and unit.abbreviation:
                 score += 2
 
-            if not unit.numbers_validity:
+            if unit.numbers_validity is None:
                 score += 1
 
             elif Unit.number_pass_numbers_validity(unit.numbers_validity, number):
@@ -836,7 +836,7 @@ units.add_unit(Unit('USD', UnitCategories.USD, Languages.CS, None, True, None, T
 units.add_unit(Unit('dolarech', UnitCategories.USD, Languages.CS, [], False, None))
 units.add_unit(Unit('dolarům', UnitCategories.USD, Languages.CS, [], False, None))
 units.add_unit(Unit('dolary', UnitCategories.USD, Languages.CS, numbers_validity_2_3_4, False, None))
-units.add_unit(Unit('dolarů', UnitCategories.USD, Languages.CS, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('dolarů', UnitCategories.USD, Languages.CS, numbers_validity_more_than_5, False, None))
 units.add_unit(Unit('dolar', UnitCategories.USD, Languages.CS, numbers_validity_ones, False, None))
 
 units.add_unit(Unit('$', UnitCategories.USD, Languages.EN, None, True, None, True))

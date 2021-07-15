@@ -35,8 +35,8 @@ def main(args):
             if has_changed:
                 print(";" + ";".join([str(mark.value) for mark in marks]) + ";" if args.flags else "",
                       source_sentence,
-                      translated_sentence,
-                      repaired_sentence,
+                      translated_sentence.strip(),
+                      repaired_sentence.strip(), "",
                       sep='\n', end='\n\n')
 
         else:

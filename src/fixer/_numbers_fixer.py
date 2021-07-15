@@ -24,8 +24,9 @@ class Relationship:
 
     def __init__(self):
         self.only_numbers_same = set()
-        self.only_numbers_different = set()
         self.same_number_same_unit = set()
+        self.half_unit_same_number = set()
+        self.only_numbers_different = set()
         self.same_number_different_unit = set()
         self.different_number_same_unit = set()
         self.different_number_different_unit = set()
@@ -33,8 +34,9 @@ class Relationship:
     def remove_src_sentence(self, idx: int):
         """Remove given idx from all internal sets"""
         self.only_numbers_same.discard(idx)
-        self.only_numbers_different.discard(idx)
         self.same_number_same_unit.discard(idx)
+        self.half_unit_same_number.discard(idx)
+        self.only_numbers_different.discard(idx)
         self.same_number_different_unit.discard(idx)
         self.different_number_same_unit.discard(idx)
         self.different_number_different_unit.discard(idx)
@@ -43,11 +45,12 @@ class Relationship:
         """Returns one level of relationships"""
         levels = {
             0: self.only_numbers_same,
-            1: self.only_numbers_different,
-            2: self.same_number_same_unit,
-            3: self.same_number_different_unit,
-            4: self.different_number_same_unit,
-            5: self.different_number_different_unit
+            1: self.same_number_same_unit,
+            2: self.half_unit_same_number,
+            3: self.only_numbers_different,
+            4: self.same_number_different_unit,
+            5: self.different_number_same_unit,
+            6: self.different_number_different_unit
         }
         return levels[level]
 
@@ -114,11 +117,12 @@ class NumberFixer(FixerToolInterface):
 
         levels = {
             0: self.__process_only_numbers_same,
-            1: self.__process_only_numbers_different,
-            2: self.__process_sentence_same_number_same_unit,
-            3: self.__process_sentence_same_number_different_unit,
-            4: self.__process_sentence_different_number_same_unit,
-            5: self.__process_sentence_different_number_different_unit,
+            1: self.__process_sentence_same_number_same_unit,
+            2: self.__process_sentence_half_unit_same_number,
+            3: self.__process_only_numbers_different,
+            4: self.__process_sentence_same_number_different_unit,
+            5: self.__process_sentence_different_number_same_unit,
+            6: self.__process_sentence_different_number_different_unit,
         }
 
         result_sentence = sentence_pair.target_text
@@ -145,6 +149,37 @@ class NumberFixer(FixerToolInterface):
 
             sentence = Replacer.replace_number(sentence, src_pair, trg_pair, self.target_lang, trg_pair.text_part)
             marks.append(StatisticsMarks.U_FIXED)
+
+        return sentence, marks
+
+    def __process_sentence_half_unit_same_number(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
+        """Process matches of numbers with units (both same). When mode is recalculating, conversion is provided."""
+        marks = [StatisticsMarks.U_HALF_UNIT_SAME_NUMBER] * len(bindings)
+
+        if self.configuration.mode == FixerModes.FIXING:
+            return sentence, marks
+
+        for binding_trg, binding_src in bindings:
+            src_pair = src_lang_numbers_units[binding_src]
+            trg_pair = trg_lang_numbers_units[binding_trg]
+            if trg_pair.modifier:
+                marks.append(StatisticsMarks.U_NUMBERS_MODIFIERS)
+
+            unit = src_pair.unit if src_pair.unit else trg_pair.unit
+            if src_pair.scaling and not trg_pair.scaling:
+                trg_pair.add_scaling(src_pair.scaling)
+            elif trg_pair.scaling and not src_pair.scaling:
+                src_pair.add_scaling(trg_pair.scaling)
+
+            if unit.category.system in self.configuration.target_units:
+                continue
+            converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, unit, unit)
+            if not converted_unit or not converted_unit:
+                marks.append(StatisticsMarks.U_UNABLE_TO_RECALCULATE)
+                continue
+            else:
+                marks.append(StatisticsMarks.U_RECALCULATED)
+            sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, converted_number, converted_unit, self.target_lang)
 
         return sentence, marks
 
@@ -330,7 +365,7 @@ class NumberFixer(FixerToolInterface):
             if not some_change:
                 break
 
-        if not len(relationships) or level not in [0, 2]:  # do random matching only when the data are the same
+        if not len(relationships) or level not in [0, 1, 2]:  # do random matching only when the data are the same
             return results
 
         to_remove = []
@@ -364,7 +399,12 @@ class NumberFixer(FixerToolInterface):
 
                 # one with unit and one without
                 if (trg_pair.unit and not src_pair.unit) or (src_pair.unit and not trg_pair.unit):
-                    continue
+
+                    # one number is missing unit, but the numbers are the same (the scaling can be missing too)
+                    if trg_pair.number == src_pair.number or (trg_pair.scaling and trg_pair.number / trg_pair.scaling == src_pair.number) or (src_pair.scaling and src_pair.number / src_pair.scaling == trg_pair.number):
+                        relationship.half_unit_same_number.add(idx)
+                    else:
+                        continue
 
                 # both same numbers without units
                 elif not trg_pair.unit and not src_pair.unit and trg_pair.number == src_pair.number:

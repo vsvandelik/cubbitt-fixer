@@ -18,6 +18,7 @@ class FixerStatisticsMarks(Enum):
     U_NUMBERS_MODIFIERS = auto()  #: :meta hide-value:
     U_ONLY_NUMBER_SAME = auto()  #: :meta hide-value:
     U_ONLY_NUMBER_DIFFERENT = auto()  #: :meta hide-value:
+    U_HALF_UNIT_SAME_NUMBER = auto()  #: :meta hide-value:
     U_FIXED = auto()  #: :meta hide-value:
 
     G_EXCEPTION_CATCH = auto()  #: :meta hide-value:
