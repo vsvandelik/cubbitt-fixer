@@ -1,7 +1,7 @@
 source_lang: cs
 target_lang: en
 aligner: fast_align # [fast_align|order_based]
-lemmatizator: udpipe_offline # [udpipe_online|udpipe_offline]
+lemmatizator: udpipe_online # [udpipe_online|udpipe_offline]
 names_tagger: nametag # [nametag]
 mode: fixing # [fixing|recalculating]
 base_tolerance: 0.1 # [0 - 1]

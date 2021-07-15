@@ -8,3 +8,6 @@ docs/_templates/
 **/__pycache__/
 *.log
 *.udpipe
+build/
+dist/
+*.egg-info
