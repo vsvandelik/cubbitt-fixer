@@ -807,8 +807,6 @@ units.add_unit(Unit('miles', UnitCategories.MI, Languages.EN, numbers_validity_n
 units.add_unit(Unit('mile', UnitCategories.MI, Languages.EN, numbers_validity_ones, False, None))
 units.add_unit(Unit('mi', UnitCategories.MI, Languages.EN, None, True, None))
 
-# units.add_unit(Unit('pounds', UnitCategories.LB, Languages.EN, numbers_validity_not_ones, False, None))
-
 units.add_unit(Unit('kč', UnitCategories.CZK, Languages.CS, None, True, None))
 units.add_unit(Unit(',-kč', UnitCategories.CZK, Languages.CS, None, True, None))
 units.add_unit(Unit('Kč', UnitCategories.CZK, Languages.CS, None, True, None))
@@ -858,8 +856,8 @@ units.add_unit(Unit('EUR', UnitCategories.EUR, Languages.EN, None, True, None, T
 units.add_unit(Unit('euros', UnitCategories.EUR, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('euro', UnitCategories.EUR, Languages.EN, numbers_validity_ones, False, None))
 
-units.add_unit(Unit('£', UnitCategories.GBP, Languages.CS, None, True, None, True))
-units.add_unit(Unit('GBP', UnitCategories.GBP, Languages.CS, None, True, None, True))
+units.add_unit(Unit('£', UnitCategories.GBP, Languages.CS, [], True, None, True))
+units.add_unit(Unit('GBP', UnitCategories.GBP, Languages.CS, [], True, None, True))
 units.add_unit(Unit('librám', UnitCategories.GBP, Languages.CS, [], False, None))
 units.add_unit(Unit('librách', UnitCategories.GBP, Languages.CS, [], False, None))
 units.add_unit(Unit('librami', UnitCategories.GBP, Languages.CS, [], False, None))
@@ -871,3 +869,10 @@ units.add_unit(Unit('£', UnitCategories.GBP, Languages.EN, None, True, None, Tr
 units.add_unit(Unit('GBP', UnitCategories.GBP, Languages.EN, None, True, None, True))
 units.add_unit(Unit('pounds', UnitCategories.GBP, Languages.EN, numbers_validity_not_ones, False, None))
 units.add_unit(Unit('pound', UnitCategories.GBP, Languages.EN, numbers_validity_ones, False, None))
+
+units.add_unit(Unit('libra', UnitCategories.LB, Languages.CS, numbers_validity_ones, False, None))
+units.add_unit(Unit('libry', UnitCategories.LB, Languages.CS, numbers_validity_2_3_4, False, None))
+units.add_unit(Unit('liber', UnitCategories.LB, Languages.CS, numbers_validity_more_than_5, False, None))
+
+units.add_unit(Unit('pounds', UnitCategories.LB, Languages.EN, numbers_validity_not_ones, False, None))
+units.add_unit(Unit('pound', UnitCategories.LB, Languages.EN, numbers_validity_ones, False, None))

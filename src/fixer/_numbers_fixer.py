@@ -156,30 +156,30 @@ class NumberFixer(FixerToolInterface):
         """Process matches of numbers with units (both same). When mode is recalculating, conversion is provided."""
         marks = [StatisticsMarks.U_HALF_UNIT_SAME_NUMBER] * len(bindings)
 
-        if self.configuration.mode == FixerModes.FIXING:
-            return sentence, marks
-
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
             if trg_pair.modifier:
                 marks.append(StatisticsMarks.U_NUMBERS_MODIFIERS)
 
-            unit = src_pair.unit if src_pair.unit else trg_pair.unit
-            if src_pair.scaling and not trg_pair.scaling:
-                trg_pair.add_scaling(src_pair.scaling)
-            elif trg_pair.scaling and not src_pair.scaling:
-                src_pair.add_scaling(trg_pair.scaling)
-
-            if unit.category.system in self.configuration.target_units:
-                continue
-            converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, unit, unit)
-            if not converted_unit or not converted_unit:
-                marks.append(StatisticsMarks.U_UNABLE_TO_RECALCULATE)
-                continue
+            if self.configuration.mode == FixerModes.FIXING and src_pair.unit:
+                sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, src_pair.number, src_pair.unit, self.target_lang)
             else:
-                marks.append(StatisticsMarks.U_RECALCULATED)
-            sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, converted_number, converted_unit, self.target_lang)
+                unit = src_pair.unit if src_pair.unit else trg_pair.unit
+                if src_pair.scaling and not trg_pair.scaling:
+                    trg_pair.add_scaling(src_pair.scaling)
+                elif trg_pair.scaling and not src_pair.scaling:
+                    src_pair.add_scaling(trg_pair.scaling)
+
+                if unit.category.system in self.configuration.target_units:
+                    continue
+                converted_number, converted_unit = units.convert_number(self.target_lang, self.configuration.target_units, src_pair.number, unit, unit)
+                if not converted_unit or not converted_unit:
+                    marks.append(StatisticsMarks.U_UNABLE_TO_RECALCULATE)
+                    continue
+                else:
+                    marks.append(StatisticsMarks.U_RECALCULATED)
+                sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, converted_number, converted_unit, self.target_lang)
 
         return sentence, marks
 
