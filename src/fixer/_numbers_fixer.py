@@ -7,7 +7,7 @@ from ._finder import Finder, NumberUnitFinderResult
 from ._fixer_tool import FixerToolInterface
 from ._replacer import Replacer
 from ._sentence_pair import SentencePair
-from ._units import units
+from ._units import units, UnitsSystem
 from .fixer_configurator import FixerConfigurator, FixerModes
 from .fixer_statistics import FixerStatisticsMarks as StatisticsMarks
 
@@ -154,11 +154,14 @@ class NumberFixer(FixerToolInterface):
 
     def __process_sentence_half_unit_same_number(self, bindings: List[Tuple[int, int]], src_lang_numbers_units: List[NumberUnitFinderResult], trg_lang_numbers_units: List[NumberUnitFinderResult], sentence: str) -> Tuple[str, list]:
         """Process matches of numbers with units (both same). When mode is recalculating, conversion is provided."""
-        marks = [StatisticsMarks.U_HALF_UNIT_SAME_NUMBER] * len(bindings)
+        marks = []
 
         for binding_trg, binding_src in bindings:
             src_pair = src_lang_numbers_units[binding_src]
             trg_pair = trg_lang_numbers_units[binding_trg]
+
+            marks.append(StatisticsMarks.U_SAME_NUMBER_ONLY_UNIT_SRC if src_pair.unit else StatisticsMarks.U_SAME_NUMBER_ONLY_UNIT_TRG)
+
             if trg_pair.modifier:
                 marks.append(StatisticsMarks.U_NUMBERS_MODIFIERS)
 

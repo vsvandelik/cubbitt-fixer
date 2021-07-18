@@ -107,7 +107,7 @@ class NamesFixer(FixerToolInterface):
                         possible_target_names_idxs.append(idx)
 
             if not possible_target_names_idxs:
-                return None, [StatisticsMarks.N_NAMES_PROBLEM_UNFIXABLE]
+                return None, [StatisticsMarks.N_PROBLEM_UNFIXABLE]
 
             selected_target_name = mode(possible_target_names_idxs)  # select name with the most matched words
             matches.append((source_name, sentence_pair.target_names[selected_target_name]))
@@ -122,7 +122,7 @@ class NamesFixer(FixerToolInterface):
                         matches_to_remove.append(match_id)
 
         if len(matches_to_remove) == len(matches):
-            return None, [StatisticsMarks.N_NAMES_PROBLEM_UNFIXABLE]
+            return None, [StatisticsMarks.N_PROBLEM_UNFIXABLE]
 
         marks = []
 

@@ -59,6 +59,8 @@ class DecimalSeparatorFixer(FixerToolInterface):
                     translated_sentence = translated_sentence.replace(number, DecimalSeparatorFixer.__change_separators(number, self.target_lang))
                     marks += [StatisticsMarks.S_SWAPPED_SEPARATORS]
                 replaced += 1
+            else:
+                marks += [StatisticsMarks.S_CORRECT]
 
         return translated_sentence, marks
 

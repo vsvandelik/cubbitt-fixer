@@ -18,13 +18,15 @@ class FixerStatisticsMarks(Enum):
     U_NUMBERS_MODIFIERS = auto()  #: :meta hide-value:
     U_ONLY_NUMBER_SAME = auto()  #: :meta hide-value:
     U_ONLY_NUMBER_DIFFERENT = auto()  #: :meta hide-value:
-    U_HALF_UNIT_SAME_NUMBER = auto()  #: :meta hide-value:
+    U_SAME_NUMBER_ONLY_UNIT_SRC = auto()  #: :meta hide-value:
+    U_SAME_NUMBER_ONLY_UNIT_TRG = auto()  #: :meta hide-value:
     U_FIXED = auto()  #: :meta hide-value:
 
     G_EXCEPTION_CATCH = auto()  #: :meta hide-value:
 
     S_SWAPPED_SEPARATORS = auto()  #: :meta hide-value:
     S_DECIMAL_POINT_AS_TIME = auto()  #: :meta hide-value:
+    S_CORRECT = auto()  #: :meta hide-value:
 
     N_MULTIPLE_NAMES_SENTENCE = auto()  #: :meta hide-value:
     N_PROBLEM_UNFIXABLE = auto()  #: :meta hide-value:
