@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="cubbitt-fix-vsvandelik",
-    version="0.1.1",
+    version="1.0.0",
     author="Vojtech Svandelik",
     author_email="vojtech.svandelik@gmail.com",
     description="CUBBITT fixer for numbers, units and possible names problems.",
@@ -14,6 +14,7 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
+    scripts=["scripts/cubbittfix.py"],
     python_requires=">=3.8",
     install_requires=[
         "conllu",

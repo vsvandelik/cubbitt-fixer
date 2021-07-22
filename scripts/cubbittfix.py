@@ -1,4 +1,5 @@
-# coding=utf-8
+#!/usr/bin/env python
+
 import argparse
 import sys
 
@@ -44,10 +45,10 @@ def main(args):
 
     if args.flags:
         statistics_to_print = [(mark.value, mark.name, statistics[mark.value]) for mark in FixerStatisticsMarks]
-        print(tabulate(statistics_to_print, headers=("ID", "Label", "#")))
+        print(tabulate(statistics_to_print, headers=("ID", "Label", "#")), file=sys.stderr)
     else:
         statistics_to_print = [(mark.name, statistics[mark.value]) for mark in FixerStatisticsMarks]
-        print(tabulate(statistics_to_print, headers=("Label", "#")))
+        print(tabulate(statistics_to_print, headers=("Label", "#")), file=sys.stderr)
 
 
 if __name__ == "__main__":
