@@ -167,7 +167,7 @@ class NumberFixer(FixerToolInterface):
 
             if self.configuration.mode == FixerModes.FIXING and src_pair.unit:
                 sentence = Replacer.replace_unit_number(sentence, src_pair, trg_pair, src_pair.number, src_pair.unit, self.target_lang)
-            else:
+            elif self.configuration.mode == FixerModes.RECALCULATING:
                 unit = src_pair.unit if src_pair.unit else trg_pair.unit
                 if src_pair.scaling and not trg_pair.scaling:
                     trg_pair.add_scaling(src_pair.scaling)
